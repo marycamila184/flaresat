@@ -22,7 +22,7 @@ if gpus:
     except RuntimeError as e:
         print(e)
 
-CHECKPOINT_MODEL_NAME = 'flare-sentinel.hdf5'
+CHECKPOINT_MODEL_NAME = 'flaresat.hdf5'
 EPOCHS = 200
 
 IMAGE_SIZE = (256, 256)
@@ -43,7 +43,7 @@ train_generator = ImageMaskGenerator(
     image_list=images_train,
     mask_list=masks_train,
     batch_size=BATCH_SIZE,
-    image_size=(256, 256),
+    image_size=IMAGE_SIZE,
     n_channels=N_CHANNELS
 )
 
@@ -51,7 +51,7 @@ val_generator = ImageMaskGenerator(
     image_list=images_validation,
     mask_list=masks_validation,
     batch_size=BATCH_SIZE,
-    image_size=(256, 256),
+    image_size=IMAGE_SIZE,
     n_channels=N_CHANNELS
 )
 
