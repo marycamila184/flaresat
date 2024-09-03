@@ -11,11 +11,11 @@ from loss import *
 from utils import *
 
 NUM_CLASSES = 1
-LEARNING_RATE = 0.001
-EPOCHS = 200
+LEARNING_RATE = 0.01
+EPOCHS = 50
 IMAGE_SIZE = (256, 256)
 N_CHANNELS = 10
-BATCH_SIZE = 8
+BATCH_SIZE = 10
 OUTPUT_DIR = '/home/marycamila/flaresat/train/train_output'
 
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
@@ -24,7 +24,7 @@ print(f"Using device: {device}")
 def load_model():
     weights_manager = satlaspretrain_models.Weights()
     model = weights_manager.get_pretrained_model("Landsat_SwinB_SI", head=satlaspretrain_models.Head.BINSEGMENT, fpn=True, num_categories=NUM_CLASSES)
-
+    model = model.to(device)
     return model
 
 def freeze_layers(model):
@@ -36,14 +36,18 @@ def freeze_layers(model):
                                         padding=first_layer.padding,
                                         bias=(first_layer.bias is not None))
 
-    for param in model.backbone.parameters():
+    for param in model.parameters():
         param.requires_grad = False
 
+    # for name, param in model.named_parameters():
+    #     if 'head.layers' in name or 'upsample.layers' in name or 'fpn.fpn' in name:
+    #         param.requires_grad = True
+    #     if 'backbone.backbone.head' in name:
+    #         param.requires_grad = True     
+    
     for name, param in model.named_parameters():
-        if 'head.layers' in name or 'upsample.layers' in name or 'fpn.fpn' in name:
+        if 'head' in name:
             param.requires_grad = True
-        #if 'backbone.backbone.head' in name:
-        #    param.requires_grad = True        
     
     return model
 
@@ -64,14 +68,14 @@ train_loader = DataLoader(train_dataset, batch_size=BATCH_SIZE, shuffle=True)
 val_dataset = ImageGenerator(images_validation, masks_validation, N_CHANNELS, NUM_CLASSES, image_shape)
 val_loader = DataLoader(val_dataset, batch_size=BATCH_SIZE, shuffle=False)
 
-summarize_model(model)
+# summarize_model(model)
 
 criterion = BinaryFocalLoss()
-optimizer = optim.Adam(filter(lambda p: p.requires_grad, model.parameters()), lr=LEARNING_RATE)
+optimizer = optim.Adam(model.parameters(), lr=LEARNING_RATE)
 
 print('FlareSat - Train initiated')
 
-best_loss = float('inf') 
+best_loss = 10000
 train_losses = []
 val_losses = []
 
@@ -116,7 +120,7 @@ for epoch in range(EPOCHS):
     print(f"Validation Loss: {val_epoch_loss:.12f}")
 
     if epoch_loss < best_loss:
-        bast_loss = epoch_loss
+        best_loss = epoch_loss
 
         transfer_learning_model = 'transfer_learning_flaresat.pth'
 
