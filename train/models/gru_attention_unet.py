@@ -41,7 +41,6 @@ def gru_attetion_unet_model(input_size, base_filters=32):
     c4 = conv_block(p3, base_filters * 8)
     p4 = layers.MaxPooling2D(pool_size=(2, 2))(c4)
 
-    # Bottleneck (spatial feature extraction)
     b1 = conv_block(p4, base_filters * 16)
 
     # Reshape for GRU

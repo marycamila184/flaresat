@@ -33,6 +33,6 @@ class ImageGenerator(Dataset):
 
         # Adjusted for tensor input
         img = torch.tensor(img, dtype=torch.float32).permute(2, 0, 1)
-        mask = torch.tensor(mask, dtype=torch.long).squeeze(2)
+        mask = torch.tensor(mask, dtype=torch.float32).permute(2, 0, 1) 
         
         return img, mask

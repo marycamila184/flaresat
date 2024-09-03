@@ -7,13 +7,17 @@ class BinaryFocalLoss(nn.Module):
         self.alpha = alpha
         self.gamma = gamma
         self.reduction = reduction
-    
+
     def forward(self, inputs, targets):
-        inputs = torch.sigmoid(inputs)
-        bce_loss = nn.functional.binary_cross_entropy(inputs, targets, reduction='none')
+        probs = torch.sigmoid(inputs)
         
-        pt = torch.where(targets == 1, inputs, 1 - inputs)
-        focal_loss = (1 - pt) ** self.gamma * bce_loss
+        bce_loss = nn.functional.binary_cross_entropy(probs, targets, reduction='none')
+        
+        alpha_factor = targets * self.alpha + (1 - targets) * (1 - self.alpha)
+        p_t = targets * probs + (1 - targets) * (1 - probs)
+        focal_weight = alpha_factor * ((1 - p_t) ** self.gamma)
+        
+        focal_loss = focal_weight * bce_loss
         
         if self.reduction == 'mean':
             return focal_loss.mean()
