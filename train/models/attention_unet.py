@@ -2,8 +2,9 @@ import tensorflow as tf
 from keras.models import Model
 from keras.layers import Input
 from tensorflow.keras import layers
+from tensorflow.keras.optimizers import Adam
 
-LEARNING_RATE = 0.00001
+LEARNING_RATE = 0.0005
 MASK_CHANNELS = 1
 
 def conv_block(input_tensor, num_filters, kernel_size=3, dropout_rate=0.1, kernel_initializer='he_normal'):
@@ -68,6 +69,6 @@ def attetion_unet_model(input_size, base_filters=32):
     outputs = layers.Conv2D(MASK_CHANNELS, (1, 1), activation='sigmoid')(c9)
 
     model = Model(inputs=[inputs], outputs=[outputs])
-    model.compile(optimizer='adam', loss='binary_focal_crossentropy', metrics=['accuracy'])
+    model.compile(optimizer=Adam(learning_rate=LEARNING_RATE), loss='binary_focal_crossentropy', metrics=['accuracy'])
 
     return model

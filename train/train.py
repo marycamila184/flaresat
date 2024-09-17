@@ -3,9 +3,12 @@ import pandas as pd
 import os
 
 from keras.callbacks import ModelCheckpoint
+from tensorflow.keras.utils import plot_model
 from matplotlib import pyplot as plt
 
-from models.gru_attention_unet import *
+from models.attention_unet import *
+from models.unet import *
+from models.transfer_learning.unet_sentinel_landcover import unet_sentinel_landcover
 
 from processing import *
 from generator import *
@@ -55,19 +58,15 @@ val_generator = ImageMaskGenerator(
     n_channels=N_CHANNELS
 )
 
-# DONE - model = unet_model(input_size=(IMAGE_SIZE[0], IMAGE_SIZE[1], N_CHANNELS), base_filters=32)
-# DONE - model = attetion_unet_model(input_size=(IMAGE_SIZE[0], IMAGE_SIZE[1], N_CHANNELS), base_filters=32)
-# BAD RESULT - model = residual_attention_unet(input_size=(IMAGE_SIZE[0], IMAGE_SIZE[1], N_CHANNELS), base_filters=32)
-# BAD RESULT - model = unet_plus_plus(input_size=(IMAGE_SIZE[0], IMAGE_SIZE[1], N_CHANNELS), base_filters=32)
-# BAD RESULT - model = lstm_unet(input_size=(IMAGE_SIZE[0], IMAGE_SIZE[1], N_CHANNELS), base_filters=32)
-# model = gru_unet(input_size=(IMAGE_SIZE[0], IMAGE_SIZE[1], N_CHANNELS), base_filters=32)
-model = gru_attetion_unet_model(input_size=(IMAGE_SIZE[0], IMAGE_SIZE[1], N_CHANNELS), base_filters=32)
-
+#model = unet_sentinel_landcover(input_size=(IMAGE_SIZE[0], IMAGE_SIZE[1], N_CHANNELS))
+model = unet_sentinel_landcover()
 model.summary()
+
+plot_model(model, to_file='model_architecture.png', show_shapes=True, show_layer_names=True)
 
 checkpoint = ModelCheckpoint(
     os.path.join(OUTPUT_DIR, CHECKPOINT_MODEL_NAME),
-    monitor='loss',
+    monitor='val_loss',
     verbose=1,
     save_best_only=True,
     mode='auto',

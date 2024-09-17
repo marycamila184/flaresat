@@ -8,7 +8,7 @@ import numpy as np
 import pandas as pd
 
 OUTPUT_DIR = '/home/marycamila/flaresat/train/train_output'
-MODEL_FILE_NAME = 'flare-sentinel.hdf5'
+MODEL_FILE_NAME = 'flaresat.hdf5'
 THRESHOLD = 0.50
 
 IMAGE_SIZE = 256

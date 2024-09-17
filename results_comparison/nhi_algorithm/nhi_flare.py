@@ -33,13 +33,13 @@ def get_toa_img_arr(file_path):
     img = img * MAX_PIXEL_VALUE
 
     if 'flare_patches' in file_path:
-        entity_id = file_path.split('_')[3]
+        entity_id = file_path.split('_')[2]
         path = os.path.join(PATH_MTL, entity_id)
         metadata_file = glob.glob(os.path.join(path, '*_MTL.txt'))[0]       
     
     else:
         # In case of fire patches
-        scene_id = file_path.split('/')[9]
+        scene_id = file_path.split('/')[6]
         scene_id = scene_id.split('_')[:-1]
         scene_id = '_'.join(scene_id)
         path = os.path.join(PATH_METADATA, scene_id)
@@ -69,19 +69,14 @@ def get_toa_img_arr(file_path):
     nhiswnir = (lswir1 - lnir) / (lswir1 + lnir)
 
     # Extreme Pixel reference = https://www.mdpi.com/2072-4292/12/19/3232
-    #extreme_pixel = np.where(((lswir1 >= 71.3) & (b1 < 70)), 1, 0)
-    # hp = np.where((nhiswir > 0) | (nhiswnir > 0) | (extreme_pixel > 0), 1, 0)
-
-    hp = np.where((nhiswir > 0) | (nhiswnir > 0), 1, 0)
-
-    N = len(images_test)
-    of = np.where((hp > 0), 1, 0)
+    extreme_pixel = np.where((lswir1 >= 71.3) & (b1 < 70), 1, 0)
+    hp = np.where((nhiswir > 0) | (nhiswnir > 0) | (extreme_pixel > 0), 1, 0)
 
     return hp
 
 def get_mask_arr(file_path):
     mask = tiff.imread(file_path)
-    mask = np.resize(mask, (256, 256, 1))
+    mask = np.resize(mask, (256, 256, 1))z
     mask = np.float32(mask)/255
 
     return mask
@@ -92,18 +87,18 @@ test_masks = np.array([get_mask_arr(path) for path in masks_test['mask_file']])
 y_pred_flat = test_images.flatten()
 y_test_flat = test_masks.flatten()
 
-# precision = precision_score(y_test_flat, y_pred_flat)
-# recall = recall_score(y_test_flat, y_pred_flat)
-# f1 = f1_score(y_test_flat, y_pred_flat)
+precision = precision_score(y_test_flat, y_pred_flat)
+recall = recall_score(y_test_flat, y_pred_flat)
+f1 = f1_score(y_test_flat, y_pred_flat)
 
-# intersection = np.logical_and(y_test_flat, y_pred_flat)
-# union = np.logical_or(y_test_flat, y_pred_flat)
-# iou = np.sum(intersection) / np.sum(union)
+intersection = np.logical_and(y_test_flat, y_pred_flat)
+union = np.logical_or(y_test_flat, y_pred_flat)
+iou = np.sum(intersection) / np.sum(union)
 
-# print(f"Precision: {precision}")
-# print(f"Recall: {recall}")
-# print(f"F1 Score: {f1}")
-# print(f"IoU: {iou}")
+print(f"Precision: {precision}")
+print(f"Recall: {recall}")
+print(f"F1 Score: {f1}")
+print(f"IoU: {iou}")
 
 for index in range(30):
     original_image = test_masks[index][:, :]
@@ -112,6 +107,7 @@ for index in range(30):
     cv2.putText(original_image, 'Ground Truth Mask', (10, 25), cv2.FONT_HERSHEY_SIMPLEX, 0.3, (255, 255, 255), 1)
 
     predicted_mask = test_images[index][:, :]
+    predicted_mask = cv2.normalize(predicted_mask, None, 0, 255, cv2.NORM_MINMAX)
     predicted_mask = cv2.cvtColor(predicted_mask.astype(np.uint8), cv2.COLOR_GRAY2BGR)
     cv2.putText(predicted_mask, 'NHI Predicted Mask', (10, 25), cv2.FONT_HERSHEY_SIMPLEX, 0.3, (255, 255, 255), 1)
 
