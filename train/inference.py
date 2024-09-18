@@ -1,5 +1,5 @@
 from tensorflow.python.keras import backend as K
-from processing import *
+import utils.processing as processing
 import tensorflow as tf
 import pandas as pd
 import numpy as np
@@ -20,7 +20,7 @@ except:
 
 IMAGES_NUM = 15
 OUTPUT_DIR = '/home/marycamila/flaresat/train/train_output'
-MODEL_FILE_NAME = 'flare-sentinel.hdf5'
+MODEL_FILE_NAME = 'flaresat.hdf5'
 N_CHANNELS = 10
 THRESHOLD = 0.50
 
@@ -65,8 +65,8 @@ def inference_flare(x_test, y_test, y_pred_thresholded, index, save_path):
 images_test = pd.read_csv('/home/marycamila/flaresat/dataset/images_fire_test.csv').head(IMAGES_NUM)
 images_mask = pd.read_csv('/home/marycamila/flaresat/dataset/images_fire_mask.csv').head(IMAGES_NUM)
 
-test_images = np.array([get_img_arr(path, n_channels=N_CHANNELS) for path in images_test['tiff_file']])
-mask_images = np.array([get_mask_arr(path) for path in images_mask['mask_file']])
+test_images = np.array([processing.load_image(path, n_channels=N_CHANNELS) for path in images_test['tiff_file']])
+mask_images = np.array([processing.load_mask(path) for path in images_mask['mask_file']])
 
 model_path = os.path.join(OUTPUT_DIR, MODEL_FILE_NAME)
 model = tf.keras.models.load_model(model_path)

@@ -1,9 +1,20 @@
 import matplotlib.pyplot as plt
 import numpy as np
 
-# Example: Load your image data (shape: 7000 x 7000 x 10)
-# Replace this with your actual image loading mechanism
-image = np.random.rand(256, 256, 10)  # Example random data
+# Ordenar a lista de imagem e mascara pelo nome da imagem grande
+# Filtrar os patches de uma imagem
+# Ler a imagem grande
+# Fazer os calculos
+# For por patch
+# Achar o patch da imagem menor
+# Extrair o resultado em um vetor com o limiar
+# Concatenar na lista
+# Flatten 
+# Resultado
+
+THRESHOLD = 0.05 # Reference https://www.mdpi.com/2071-1050/15/6/5333 - 4.2. Anomaly Detection
+
+image = np.random.rand(7000, 7000, [5,6])  # Example random data
 
 # Reshape the image to (7000*7000, 10)
 X = image.reshape(-1, 10)
@@ -28,10 +39,4 @@ for i in range(X.shape[0]):
 
 distances_image = distances.reshape(256, 256)
 
-threshold = 3.85
-
-anomaly_mask = distances_image > threshold
-
-plt.imshow(anomaly_mask, cmap='gray')
-plt.title('Anomaly Detection Mask')
-plt.show()
+anomaly_mask = distances_image > THRESHOLD

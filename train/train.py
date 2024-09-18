@@ -6,11 +6,10 @@ from keras.callbacks import ModelCheckpoint
 from tensorflow.keras.utils import plot_model
 from matplotlib import pyplot as plt
 
-from models.attention_unet import *
-from models.unet import *
 from models.transfer_learning.unet_sentinel_landcover import unet_sentinel_landcover
+from models.attention_unet import attetion_unet_model
+from models.unet import unet_model
 
-from processing import *
 from generator import *
 
 CUDA_DEVICE = 0
@@ -31,6 +30,7 @@ EPOCHS = 200
 IMAGE_SIZE = (256, 256)
 
 N_CHANNELS = 10
+BANDS = []
 BATCH_SIZE = 16
 
 RANDOM_STATE = 42
@@ -44,6 +44,7 @@ masks_validation = pd.read_csv('/home/marycamila/flaresat/dataset/masks_val.csv'
 # Create instances of the custom data generator
 train_generator = ImageMaskGenerator(
     image_list=images_train,
+    bands = BANDS,
     mask_list=masks_train,
     batch_size=BATCH_SIZE,
     image_size=IMAGE_SIZE,
@@ -52,14 +53,15 @@ train_generator = ImageMaskGenerator(
 
 val_generator = ImageMaskGenerator(
     image_list=images_validation,
+    bands = BANDS,
     mask_list=masks_validation,
     batch_size=BATCH_SIZE,
     image_size=IMAGE_SIZE,
     n_channels=N_CHANNELS
 )
 
-#model = unet_sentinel_landcover(input_size=(IMAGE_SIZE[0], IMAGE_SIZE[1], N_CHANNELS))
-model = unet_sentinel_landcover()
+#model = unet_model(input_size=(IMAGE_SIZE[0], IMAGE_SIZE[1], N_CHANNELS))
+model = unet_sentinel_landcover(input_size=(IMAGE_SIZE[0], IMAGE_SIZE[1], N_CHANNELS))
 model.summary()
 
 plot_model(model, to_file='model_architecture.png', show_shapes=True, show_layer_names=True)

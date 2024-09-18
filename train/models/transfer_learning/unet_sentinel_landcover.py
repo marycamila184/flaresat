@@ -4,10 +4,11 @@ from keras.layers import Input
 from models.transfer_learning.builder import unet_builder
 from tensorflow.keras.optimizers import Adam
 
-LEARNING_RATE = 0.0001
+LEARNING_RATE = 0.01
 MASK_CHANNELS = 1
 
-def unet_sentinel_landcover(n_channels):
+def unet_sentinel_landcover(input_size):
+    n_channels = input_size[2]
     new_model = unet_builder.build_unet(n_channels, MASK_CHANNELS, activation='sigmoid')  # Flare binary output
 
     # https://github.com/mayrajeo/lulc_ml

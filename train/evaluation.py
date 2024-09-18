@@ -1,5 +1,5 @@
 from sklearn.metrics import precision_score, recall_score, f1_score
-from processing import get_img_arr, get_mask_arr
+import utils.processing as processing
 from tensorflow.keras.models import load_model
 import tensorflow as tf
 
@@ -17,8 +17,8 @@ N_CHANNELS = 10
 images_test = pd.read_csv('/home/marycamila/flaresat/dataset/images_test.csv')
 masks_test = pd.read_csv('/home/marycamila/flaresat/dataset/masks_test.csv')
 
-test_images = np.array([get_img_arr(path, N_CHANNELS) for path in images_test['tiff_file']])
-test_masks = np.array([get_mask_arr(path) for path in masks_test['mask_file']])
+test_images = np.array([processing.load_image(path, N_CHANNELS) for path in images_test['tiff_file']])
+test_masks = np.array([processing.load_mask(path) for path in masks_test['mask_file']])
 
 model_path = os.path.join(OUTPUT_DIR, MODEL_FILE_NAME)
 model = load_model(model_path)
