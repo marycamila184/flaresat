@@ -64,7 +64,8 @@ val_generator = ImageMaskGenerator(
 model = unet_sentinel_landcover(input_size=(IMAGE_SIZE[0], IMAGE_SIZE[1], N_CHANNELS))
 model.summary()
 
-plot_model(model, to_file='model_architecture.png', show_shapes=True, show_layer_names=True)
+model_view = os.path.join(OUTPUT_DIR, "model_architecture.png")
+plot_model(model, to_file=model_view, show_shapes=True, show_layer_names=True)
 
 checkpoint = ModelCheckpoint(
     os.path.join(OUTPUT_DIR, CHECKPOINT_MODEL_NAME),

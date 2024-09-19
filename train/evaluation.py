@@ -12,12 +12,13 @@ MODEL_FILE_NAME = 'flaresat.hdf5'
 THRESHOLD = 0.50
 
 IMAGE_SIZE = 256
-N_CHANNELS = 10
+N_CHANNELS = 3
+BANDS = [4,5,6]
 
 images_test = pd.read_csv('/home/marycamila/flaresat/dataset/images_test.csv')
 masks_test = pd.read_csv('/home/marycamila/flaresat/dataset/masks_test.csv')
 
-test_images = np.array([processing.load_image(path, N_CHANNELS) for path in images_test['tiff_file']])
+test_images = np.array([processing.load_image(path, N_CHANNELS, bands=BANDS) for path in images_test['tiff_file']])
 test_masks = np.array([processing.load_mask(path) for path in masks_test['mask_file']])
 
 model_path = os.path.join(OUTPUT_DIR, MODEL_FILE_NAME)

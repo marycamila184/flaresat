@@ -19,7 +19,7 @@ try:
 except:
     pass
 
-PATH_FIRE_MASKS = '/home/marycamila/Downloads/masks_patches'
+PATH_FIRE_MASKS = '/media/marycamila/Expansion/raw/active_fire/masks_patches'
 OUTPUT_DIR = '/home/marycamila/flaresat/train/train_output/attention_unet'
 MODEL_FILE_NAME = 'flare-sentinel-10c-16bs-32f-5lr.hdf5'
 N_CHANNELS = 10

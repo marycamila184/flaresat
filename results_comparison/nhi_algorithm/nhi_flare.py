@@ -9,7 +9,7 @@ import cv2
 
 OUTPUT_PATH = '/home/marycamila/flaresat/results_comparison/nhi_algorithm/output'
 PATH_MTL = '/media/marycamila/Expansion/raw/2019'
-PATH_METADATA = '/home/marycamila/Downloads/metadata'
+PATH_METADATA = '/media/marycamila/Expansion/raw/active_fire/metadata'
 MAX_PIXEL_VALUE = 65535
 
 images_test = pd.read_csv('/home/marycamila/flaresat/dataset/images_test.csv')
@@ -26,7 +26,7 @@ def open_txt_get_props(file_path):
     return metadata
 
 
-def get_toa_img_arr(file_path):
+def get_toa_nhi_arr(file_path):
     # NHI flare reference - https://www.mdpi.com/2072-4292/14/24/6319#B29-remotesensing-14-06319
     img = tiff.imread(file_path)
     img = np.resize(img, (256, 256, 10))    
@@ -76,12 +76,12 @@ def get_toa_img_arr(file_path):
 
 def get_mask_arr(file_path):
     mask = tiff.imread(file_path)
-    mask = np.resize(mask, (256, 256, 1))z
+    mask = np.resize(mask, (256, 256, 1))
     mask = np.float32(mask)/255
 
     return mask
 
-test_images = np.array([get_toa_img_arr(path) for path in images_test['tiff_file']])
+test_images = np.array([get_toa_nhi_arr(path) for path in images_test['tiff_file']])
 test_masks = np.array([get_mask_arr(path) for path in masks_test['mask_file']])
 
 y_pred_flat = test_images.flatten()

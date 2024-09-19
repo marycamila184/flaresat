@@ -7,9 +7,9 @@ import re
 
 MAX_PIXEL_VALUE = 65535
 
-PATH_METADATA = '/home/marycamila/Downloads/metadata'
+PATH_METADATA = '/media/marycamila/Expansion/raw/active_fire/metadata'
 PATH_CSV_POINTS = '/home/marycamila/flaresat/source/csv_points/gas_flaring_points.csv'
-PATCH_ACTIVE_FIRE = '/home/marycamila/Downloads/landsat_patches'
+PATCH_ACTIVE_FIRE = '/media/marycamila/Expansion/raw/active_fire/landsat_patches'
 PATH_NON_FLARE = '/home/marycamila/flaresat/dataset/non_fire_patches'
 PATCH_MASK_NON_FLARE = '/home/marycamila/flaresat/dataset/non_fire_mask_patches' 
 
@@ -70,8 +70,8 @@ print("Total of valid manually scenes with no overapping with flare images:" + s
 # df_test_images = pd.DataFrame(valid_landsat_scenes, columns=["entity_id_active_fire_test"])
 # df_test_images.to_csv('entity_id_active_fire_test.csv', index=False)
 
-list_mask_patches = os.listdir('/home/marycamila/Downloads/masks_patches')
-list_manually_patches = os.listdir('/home/marycamila/Downloads/manual_annotations_patches')
+list_mask_patches = os.listdir('/media/marycamila/Expansion/raw/active_fire/masks_patches')
+list_manually_patches = os.listdir('/media/marycamila/Expansion/raw/active_fire/manual_annotations_patches')
 list_all_manually_images = list_mask_patches + list_manually_patches
 
 for filename in valid_landsat_scenes:

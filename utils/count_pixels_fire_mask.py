@@ -6,7 +6,7 @@ import os
 #faço o match com a pasta que as mascaras originais estao 
 #conto quantos pixels brancos tem
 PATH_DATASET = '/home/marycamila/flaresat/dataset'
-PATH_FIRE_MASKS = '/home/marycamila/Downloads/masks_patches'
+PATH_FIRE_MASKS = '/media/marycamila/Expansion/raw/active_fire/masks_patches'
 
 df_test_fire_mask = pd.read_csv(os.path.join(PATH_DATASET, 'images_fire_mask.csv'))
 df_test_fire_mask["mask_file"] = df_test_fire_mask["mask_file"].str.split("/").str[-1]

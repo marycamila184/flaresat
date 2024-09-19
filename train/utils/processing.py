@@ -8,14 +8,13 @@ def load_image(file_path, n_channels, target_size=None, bands=[]):
     
     if n_channels == 10:
         img = img[:, :, :]
-    elif n_channels == 3 or n_channels == 4:
+    else:
         # Active-fire 
         img = img[:, :, bands]
         #img = img[:, :, [1,5,6,4]] # Refernce transfer learning
         #img = img[:, :, [1,5,6]] # Reference active-fire
         #img = img[:, :, [4,5,6]] # Refernce
-    elif n_channels== 2:
-        img = img[:, :, [5,6]]
+        #img = img[:, :, [5,6]]        
     
     if target_size:
         target_shape = (target_size[0], target_size[1], n_channels)
