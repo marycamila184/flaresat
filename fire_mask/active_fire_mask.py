@@ -5,7 +5,6 @@ import tensorflow as tf
 from tensorflow.python.keras import backend as K
 from keras.layers import *
 from keras.models import *
-from PIL import Image, ImageDraw
 import numpy as np
 from rasterio.windows import Window
 import cv2

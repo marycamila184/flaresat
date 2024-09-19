@@ -29,11 +29,12 @@ def unet_sentinel_landcover(input_size):
 
     new_model.set_weights(existing_weights)
 
-    for layer in new_model.layers:
-        if "encoder" in layer.name:
-            layer.trainable = False
+    # Attempt to freeze encoder layers
+    # for layer in new_model.layers:
+    #     if "encoder" in layer.name:
+    #         layer.trainable = False
         
-        print(f"Layer: {layer.name}, Trainable: {layer.trainable}")
+    #     print(f"Layer: {layer.name}, Trainable: {layer.trainable}")
 
     new_model.compile(optimizer=Adam(learning_rate=LEARNING_RATE), loss='binary_focal_crossentropy', metrics=['accuracy'])
 
