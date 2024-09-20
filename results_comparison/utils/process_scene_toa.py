@@ -77,8 +77,8 @@ def get_toa_patch(file_path):
 def get_toa_scene(entity):
     band_list = []
 
-    # Fire scene
-    if 'LC08_L1TP' in entity:
+    # Fire scene uses '_' - Example: LC08_L1TP_117016_20200926
+    if '_' in entity:
         scene_dir = glob.glob(os.path.join(PATH_SCENE_FIRE, f"*{entity}*"))[0]
     else:
         # Flare scene

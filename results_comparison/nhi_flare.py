@@ -40,4 +40,4 @@ y_pred_flat = test_images.flatten()
 y_test_flat = test_masks.flatten()
 
 get_metrics_results(y_pred_flat,y_test_flat)
-plot_inferences(test_masks, test_images, OUTPUT_PATH, method="nhi")
+plot_inferences(test_masks, test_images, OUTPUT_PATH, method="nhi", n_images=50)

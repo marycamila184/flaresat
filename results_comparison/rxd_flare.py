@@ -46,7 +46,7 @@ def calculate_global_rxd(scene):
     #rxd_scene_img = (rxd_scene_img * 255).astype(np.uint8)        
     #cv2.imwrite('scene_rxd.png', rxd_scene_img)
 
-    mask_scene = distances_image > THRESHOLD
+    mask_scene = distances_image < THRESHOLD
 
     return mask_scene
 
@@ -76,17 +76,17 @@ masks_test = pd.read_csv('/home/marycamila/flaresat/dataset/masks_test.csv')
 test_images = []
 test_masks = []
 
-unique_entities = images_test['tiff_file'].unique()
+entities_filter = np.array([get_str_entity(path) for path in images_test['tiff_file']])
+unique_entities = list(set(entities_filter))
 
 for entity in unique_entities:
     patches = images_test[images_test["tiff_file"].str.contains(entity)]["tiff_file"]
-    entity_filtered = get_str_entity(entity)
-
-    scene = get_toa_scene(entity_filtered)
+   
+    scene = get_toa_scene(entity)
     rxd_scene_mask = calculate_global_rxd(scene)
 
     for patch_file in patches:
-        if 'LC08_L1TP' in entity:
+        if '_' in entity:
             # Entity name conversion to get the patch
             # Example: "'/home/marycamila/flaresat/dataset/non_fire_patches/LC08_L1TP_025033_20200921_20200921_01_RT_p00410.tiff'"
             patch_index_str = patch_file.split("_")[-1]
@@ -119,9 +119,10 @@ for entity in unique_entities:
         # cv2.imwrite('rxd_patch_output.png', normalized_image)
 
         test_images.append(rxd_patch_output)
-        entity_mask = entity.split('/')[-1]
+        entity_mask = patch_file.split('/')[-1]
 
-        if 'LC08_L1TP' in entity:
+        # Fire mask uses '_' - Example: LC08_L1TP_117016_20200926
+        if '_' in entity:
             mask_row = masks_test["mask_file"].str.contains(entity_mask)
         else:
             # Entity name conversion to get the mask
@@ -135,10 +136,10 @@ for entity in unique_entities:
         mask_path = masks_test[mask_row]["mask_file"].values[0]
         test_masks.append(get_mask_patch(mask_path))
 
-    print('Entity finished: ' + entity_filtered)
+    print('Entity finished: ' + entity)
 
-y_pred_flat = test_images.flatten()
-y_test_flat = test_masks.flatten()
+y_pred_flat = np.array(test_images).flatten()
+y_test_flat = np.array(test_masks).flatten()
 
 get_metrics_results(y_pred_flat,y_test_flat)
-plot_inferences(test_masks, test_images, OUTPUT_PATH, method="rxd")
+plot_inferences(test_masks, test_images, OUTPUT_PATH, method="rxd", n_images=150)

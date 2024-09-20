@@ -12,8 +12,8 @@ MODEL_FILE_NAME = 'flaresat.hdf5'
 THRESHOLD = 0.50
 
 IMAGE_SIZE = 256
-N_CHANNELS = 10
-BANDS = []
+N_CHANNELS = 3
+BANDS = [4,5,6]
 
 images_test = pd.read_csv('/home/marycamila/flaresat/dataset/images_test.csv')
 masks_test = pd.read_csv('/home/marycamila/flaresat/dataset/masks_test.csv')
