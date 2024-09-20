@@ -1,3 +1,4 @@
+import math
 import numpy as np
 import pandas as pd
 
@@ -22,7 +23,7 @@ def get_str_entity(file_path):
         str_entity = file_path.split('_')[2]
     else:
         str_entity = file_path.split('/')[6]
-        str_entity = str_entity.split('_')[:-1]
+        str_entity = str_entity.split('_')[0:4]
         str_entity = '_'.join(str_entity)
 
     return str_entity
@@ -75,16 +76,34 @@ masks_test = pd.read_csv('/home/marycamila/flaresat/dataset/masks_test.csv')
 test_images = []
 test_masks = []
 
-list_entities = [get_str_entity(path) for path in images_test['tiff_file']]
-unique_entities = list(set(list_entities))
+unique_entities = images_test['tiff_file'].unique()
 
 for entity in unique_entities:
     patches = images_test[images_test["tiff_file"].str.contains(entity)]["tiff_file"]
-    scene = get_toa_scene(entity)
+    entity_filtered = get_str_entity(entity)
+
+    scene = get_toa_scene(entity_filtered)
     rxd_scene_mask = calculate_global_rxd(scene)
+
     for patch_file in patches:
-        row_patch = int(patch_file.split("_")[3])
-        col_patch = int(patch_file.split("_")[4])
+        if 'LC08_L1TP' in entity:
+            # Entity name conversion to get the patch
+            # Example: "'/home/marycamila/flaresat/dataset/non_fire_patches/LC08_L1TP_025033_20200921_20200921_01_RT_p00410.tiff'"
+            patch_index_str = patch_file.split("_")[-1]
+            patch_index = int(patch_index_str.replace(".tiff", "").replace("p", ""))
+
+            rows, cols = rxd_scene_mask.shape
+
+            nx = (math.ceil(cols/PATCH_SIZE))
+            ny = (math.ceil(rows/PATCH_SIZE))
+
+            row_patch = (patch_index - 1) % ny
+            col_patch = (patch_index - 1) // ny
+
+        else:
+            row_patch = int(patch_file.split("_")[3])
+            col_patch = int(patch_file.split("_")[4])
+
         rxd_patch_output = find_patch(row_patch, col_patch, rxd_scene_mask)
 
         # RXD scene
@@ -100,17 +119,23 @@ for entity in unique_entities:
         # cv2.imwrite('rxd_patch_output.png', normalized_image)
 
         test_images.append(rxd_patch_output)
+        entity_mask = entity.split('/')[-1]
 
         if 'LC08_L1TP' in entity:
-            mask_row = masks_test["mask_file"].str.contains(f'{entity}.tiff')
+            mask_row = masks_test["mask_file"].str.contains(entity_mask)
         else:
-            mask_row = masks_test["mask_file"].str.contains(f'{entity}_{row_patch}_{col_patch}_mask.tiff')
+            # Entity name conversion to get the mask
+            # Example: "'/home/marycamila/flaresat/dataset/mask_patches/fire_LC81670242019233LGN00_14_27_mask.tiff'"
+            entity_mask = entity_mask.replace('patch', 'mask')
+            mask_row = masks_test["mask_file"].str.contains(entity_mask)
         
         if len(masks_test[mask_row]["mask_file"]) > 1:
             print("Found more than one mask - Error")
         
         mask_path = masks_test[mask_row]["mask_file"].values[0]
         test_masks.append(get_mask_patch(mask_path))
+
+    print('Entity finished: ' + entity_filtered)
 
 y_pred_flat = test_images.flatten()
 y_test_flat = test_masks.flatten()

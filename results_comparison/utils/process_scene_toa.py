@@ -8,7 +8,7 @@ import re
 MAX_PIXEL_VALUE = 65535
 PATH_MTL_SCENE = '/media/marycamila/Expansion/raw/2019'
 PATH_MTL_FIRE = '/media/marycamila/Expansion/raw/active_fire/metadata'
-PATH_SCENE_FIRE = '/media/marycamila/Expansion/raw/active_fire/metadata'
+PATH_SCENE_FIRE = '/media/marycamila/Expansion/raw/active_fire/scenes'
 
 # -------------------- Common methods for NHI and RXD
 
@@ -79,17 +79,13 @@ def get_toa_scene(entity):
 
     # Fire scene
     if 'LC08_L1TP' in entity:
-        scene_dir = os.path.join(PATH_SCENE_FIRE, entity)
-        path = os.path.join(PATH_MTL_FIRE, entity)
-        metadata_file = path + '_MTL.txt'
+        scene_dir = glob.glob(os.path.join(PATH_SCENE_FIRE, f"*{entity}*"))[0]
     else:
         # Flare scene
         scene_dir = os.path.join(PATH_MTL_SCENE, entity)
-        metadata_file = glob.glob(os.path.join(scene_dir, '*_MTL.txt'))[0]
-
+        
+    metadata_file = glob.glob(os.path.join(scene_dir, '*_MTL.txt'))[0]
     metadata = open_txt_get_props(metadata_file) 
-
-    print(entity)      
 
     # Used 6 and 7 bands - Reference: https://www.mdpi.com/2071-1050/15/6/5333
     for band in range(6, 8):
