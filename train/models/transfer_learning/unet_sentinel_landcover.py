@@ -30,6 +30,7 @@ def unet_sentinel_landcover(input_size):
     new_model.set_weights(existing_weights)
 
     # Attempt to freeze encoder layers
+    # Reference: https://users.encs.concordia.ca/~hrivaz/Amiri_MICCAI_2019.pdf
     # for layer in new_model.layers:
     #     if "encoder" in layer.name:
     #         layer.trainable = False

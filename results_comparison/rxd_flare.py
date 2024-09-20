@@ -29,24 +29,25 @@ def get_str_entity(file_path):
     return str_entity
 
 
-def calculate_global_rxd(scene):
+def calculate_global_rxd(scene, entity):
     X = scene.reshape(-1, N_CHANNELS)
+    
     mu = np.mean(X, axis=0)
+    
     cov_matrix = np.cov(X, rowvar=False)
     cov_matrix_inv = np.linalg.inv(cov_matrix)
 
-    # Compute Mahalanobis distances using vectorized operations
     diffs = X - mu
-    distances = np.sqrt(np.sum(diffs @ cov_matrix_inv * diffs, axis=1))
+    distances = np.sqrt(np.einsum('ij,ij->i', diffs @ cov_matrix_inv, diffs))
 
     distances_image = distances.reshape(scene.shape[0], scene.shape[1])
 
-    # RXD scene
-    #rxd_scene_img = distances_image.astype(np.uint8)
-    #rxd_scene_img = (rxd_scene_img * 255).astype(np.uint8)        
-    #cv2.imwrite('scene_rxd.png', rxd_scene_img)
+    # rxd_scene_img = ((distances_image - distances_image.min()) / 
+    #                  (distances_image.max() - distances_image.min()) * 255).astype(np.uint8)
+    
+    # cv2.imwrite(os.path.join(OUTPUT_PATH, 'test_plot', f'scene_rxd_{entity}.png'), rxd_scene_img)
 
-    mask_scene = distances_image < THRESHOLD
+    mask_scene = distances_image > THRESHOLD
 
     return mask_scene
 
@@ -75,6 +76,7 @@ masks_test = pd.read_csv('/home/marycamila/flaresat/dataset/masks_test.csv')
 
 test_images = []
 test_masks = []
+list_entities_plot = []
 
 entities_filter = np.array([get_str_entity(path) for path in images_test['tiff_file']])
 unique_entities = list(set(entities_filter))
@@ -83,7 +85,7 @@ for entity in unique_entities:
     patches = images_test[images_test["tiff_file"].str.contains(entity)]["tiff_file"]
    
     scene = get_toa_scene(entity)
-    rxd_scene_mask = calculate_global_rxd(scene)
+    rxd_scene_mask = calculate_global_rxd(scene, entity)
 
     for patch_file in patches:
         if '_' in entity:
@@ -106,20 +108,20 @@ for entity in unique_entities:
 
         rxd_patch_output = find_patch(row_patch, col_patch, rxd_scene_mask)
 
+        test_images.append(rxd_patch_output)
+        entity_mask = patch_file.split('/')[-1]
+
         # RXD scene
         # rxd_scene_img = rxd_scene_mask.astype(np.uint8)
         # normalized_image = cv2.normalize(rxd_scene_img, None, norm_type=cv2.NORM_MINMAX)
         # normalized_image = (normalized_image * 255).astype(np.uint8)
-        # cv2.imwrite('scene_mask.png', normalized_image)
+        # cv2.imwrite(os.path.join(OUTPUT_PATH, 'test_plot', f'scene_mask_{entity_mask}.png'), normalized_image)
 
-        # RXD patch output
+        # # RXD patch output
         # rxd_patch_img = rxd_patch_output.astype(np.uint8)
         # normalized_image = cv2.normalize(rxd_patch_img, None, norm_type=cv2.NORM_MINMAX)
         # normalized_image = (normalized_image * 255).astype(np.uint8)
-        # cv2.imwrite('rxd_patch_output.png', normalized_image)
-
-        test_images.append(rxd_patch_output)
-        entity_mask = patch_file.split('/')[-1]
+        # cv2.imwrite(os.path.join(OUTPUT_PATH, 'test_plot', f'rxd_patch_output{entity_mask}.png'), normalized_image)        
 
         # Fire mask uses '_' - Example: LC08_L1TP_117016_20200926
         if '_' in entity:
@@ -135,6 +137,7 @@ for entity in unique_entities:
         
         mask_path = masks_test[mask_row]["mask_file"].values[0]
         test_masks.append(get_mask_patch(mask_path))
+        list_entities_plot.append(entity_mask)
 
     print('Entity finished: ' + entity)
 
@@ -142,4 +145,4 @@ y_pred_flat = np.array(test_images).flatten()
 y_test_flat = np.array(test_masks).flatten()
 
 get_metrics_results(y_pred_flat,y_test_flat)
-plot_inferences(test_masks, test_images, OUTPUT_PATH, method="rxd", n_images=150)
+plot_inferences(test_masks, test_images, OUTPUT_PATH, list_entities_plot, method="rxd", n_images=150)
