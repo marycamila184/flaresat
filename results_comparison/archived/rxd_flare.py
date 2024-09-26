@@ -38,14 +38,16 @@ def calculate_global_rxd(scene, entity):
     cov_matrix_inv = np.linalg.inv(cov_matrix)
 
     diffs = X - mu
+
+    # Reference https://www.mdpi.com/2071-1050/15/6/5333 - 3. The Reed–Xiaoli Detector Method
     distances = np.sqrt(np.einsum('ij,ij->i', diffs @ cov_matrix_inv, diffs))
 
     distances_image = distances.reshape(scene.shape[0], scene.shape[1])
 
-    # rxd_scene_img = ((distances_image - distances_image.min()) / 
-    #                  (distances_image.max() - distances_image.min()) * 255).astype(np.uint8)
+    rxd_scene_img = ((distances_image - distances_image.min()) / 
+                     (distances_image.max() - distances_image.min()) * 255).astype(np.uint8)
     
-    # cv2.imwrite(os.path.join(OUTPUT_PATH, 'test_plot', f'scene_rxd_{entity}.png'), rxd_scene_img)
+    cv2.imwrite(os.path.join(OUTPUT_PATH, 'test_plot', f'scene_rxd_{entity}.png'), rxd_scene_img)
 
     mask_scene = distances_image > THRESHOLD
 
@@ -112,16 +114,16 @@ for entity in unique_entities:
         entity_mask = patch_file.split('/')[-1]
 
         # RXD scene
-        # rxd_scene_img = rxd_scene_mask.astype(np.uint8)
-        # normalized_image = cv2.normalize(rxd_scene_img, None, norm_type=cv2.NORM_MINMAX)
-        # normalized_image = (normalized_image * 255).astype(np.uint8)
-        # cv2.imwrite(os.path.join(OUTPUT_PATH, 'test_plot', f'scene_mask_{entity_mask}.png'), normalized_image)
+        rxd_scene_img = rxd_scene_mask.astype(np.uint8)
+        normalized_image = cv2.normalize(rxd_scene_img, None, norm_type=cv2.NORM_MINMAX)
+        normalized_image = (normalized_image * 255).astype(np.uint8)
+        cv2.imwrite(os.path.join(OUTPUT_PATH, 'test_plot', f'scene_mask_{entity_mask}.png'), normalized_image)
 
-        # # RXD patch output
-        # rxd_patch_img = rxd_patch_output.astype(np.uint8)
-        # normalized_image = cv2.normalize(rxd_patch_img, None, norm_type=cv2.NORM_MINMAX)
-        # normalized_image = (normalized_image * 255).astype(np.uint8)
-        # cv2.imwrite(os.path.join(OUTPUT_PATH, 'test_plot', f'rxd_patch_output{entity_mask}.png'), normalized_image)        
+        # RXD patch output
+        rxd_patch_img = rxd_patch_output.astype(np.uint8)
+        normalized_image = cv2.normalize(rxd_patch_img, None, norm_type=cv2.NORM_MINMAX)
+        normalized_image = (normalized_image * 255).astype(np.uint8)
+        cv2.imwrite(os.path.join(OUTPUT_PATH, 'test_plot', f'rxd_patch_output{entity_mask}.png'), normalized_image)        
 
         # Fire mask uses '_' - Example: LC08_L1TP_117016_20200926
         if '_' in entity:

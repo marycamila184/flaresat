@@ -1,6 +1,11 @@
 # Ignore image files
 *.tiff
 *.tif
+*.TIF
+*.png
+*.jpg
+*.jpeg
+*.gif
 
 # Ignore Python cache files
 __pycache__/
@@ -10,4 +15,4 @@ __pycache__/
 *.hdf5
 *.pth
 *.csv
-*.png
+*.txt

@@ -10,7 +10,7 @@ PATH_MTL_SCENE = '/media/marycamila/Expansion/raw/2019'
 PATH_MTL_FIRE = '/media/marycamila/Expansion/raw/active_fire/metadata'
 PATH_SCENE_FIRE = '/media/marycamila/Expansion/raw/active_fire/scenes'
 
-# -------------------- Common methods for NHI and RXD
+# -------------------- Common methods
 
 def open_txt_get_props(file_path):
     metadata = {}
@@ -31,7 +31,7 @@ def get_mask_patch(file_path):
     return mask
 
 
-# -------------------- NHI Preprocessing 
+# -------------------- PATCH Preprocessing 
 
 def check_metadata_filepath(file_path):
     if 'flare_patches' in file_path:
@@ -50,29 +50,36 @@ def check_metadata_filepath(file_path):
     return metadata_file
 
 
-def get_toa_patch(file_path):
+def get_toa_patch(file_path, method):
     img = tiff.imread(file_path)
     img = resize(img, (256,256,10))
     img = img * MAX_PIXEL_VALUE
 
     metadata_file = check_metadata_filepath(file_path)    
     metadata = open_txt_get_props(metadata_file)
-    
-    for band in range(0, 10):
-        if band != 7: # Band 8 not used as it has a different resolution
 
-            # NHI used Radiance - https://www.mdpi.com/2072-4292/14/24/6319#B29-remotesensing-14-06319
-            attribute_mult = 'RADIANCE_MULT_BAND_' + str(band + 1)
-            attribute_add = 'RADIANCE_ADD_BAND_' + str(band + 1)
-            radiance_mult_band = float(metadata[attribute_mult])
-            radiance_add_band = float(metadata[attribute_add])
+    if method == 'RADIANCE':
+        len_bands = 10
+    else:
+        len_bands = 8
+    
+    for band in range(0, len_bands):
+        if band != 7: # Band 8 not used as it has a different resolution
+            
+            # Hotspot used Radiance - https://ieeexplore.ieee.org/document/10641298
+            # NHI used Radiance - https://ieeexplore.ieee.org/document/9681815
+            # Texas used Reflectance - https://www.sciencedirect.com/science/article/pii/S1569843222002631
+            attribute_mult = method + '_MULT_BAND_' + str(band + 1)
+            attribute_add = method + '_ADD_BAND_' + str(band + 1)
+            mult_band = float(metadata[attribute_mult])
+            add_band = float(metadata[attribute_add])
 
             # Conversion to TOA Radiance - https://www.usgs.gov/landsat-missions/using-usgs-landsat-level-1-data-product    
-            img[:, :, band] = (img[:, :, band] * radiance_mult_band) + radiance_add_band
+            img[:, :, band] = (img[:, :, band] * mult_band) + add_band
 
     return img
 
-# -------------------- RXD Preprocessing 
+# -------------------- SCENE Preprocessing 
 
 def get_toa_scene(entity):
     band_list = []
