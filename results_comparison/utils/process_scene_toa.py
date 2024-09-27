@@ -14,6 +14,7 @@ import re
 
 MAX_PIXEL_VALUE = 65535
 PATH_MTL_SCENE = '/media/marycamila/Expansion/raw/2019'
+PATH_SSD_SCENE = '/media/marycamila/KINGSTON/raw'
 PATH_MTL_FIRE = '/media/marycamila/Expansion/raw/active_fire/metadata'
 PATH_SCENE_FIRE = '/media/marycamila/Expansion/raw/active_fire/scenes'
 
@@ -43,9 +44,13 @@ def get_mask_patch(file_path):
 def check_metadata_filepath(file_path):
     if 'flare_patches' in file_path:
         entity_id = file_path.split('_')[2]
-        path = os.path.join(PATH_MTL_SCENE, entity_id)
-        metadata_file = glob.glob(os.path.join(path, '*_MTL.txt'))[0]       
-    
+
+        try:
+            path = os.path.join(PATH_MTL_SCENE, entity_id)
+            metadata_file = glob.glob(os.path.join(path, '*_MTL.txt'))[0]     
+        except:
+            path = os.path.join(PATH_SSD_SCENE, entity_id)
+            metadata_file = glob.glob(os.path.join(path, '*_MTL.txt'))[0]    
     else:
         # In case of fire patches
         scene_id = file_path.split('/')[6]
@@ -112,13 +117,6 @@ def get_row_col(long, lat, path):
 
 def get_toa_scene(scene_dir, method):
     band_list = []
-
-    # Deprecated as it was used in RXD
-    # Fire scene uses '_' - Example: LC08_L1TP_117016_20200926
-    # if '_' in entity:
-    #    scene_dir = glob.glob(os.path.join(PATH_SCENE_FIRE, f"*{entity}*"))[0]
-    # else:
-    #scene_dir = os.path.join(PATH_MTL_SCENE, entity)
         
     metadata_file = glob.glob(os.path.join(scene_dir, '*_MTL.txt'))[0]
     metadata = open_txt_get_props(metadata_file) 

@@ -7,9 +7,6 @@ from utils.process_scene_toa import *
 from methods.comparison_methods import get_toa_texas
 
 OUTPUT_PATH = '/home/marycamila/flaresat/results_comparison/output/texas'
-PATH_MTL = '/media/marycamila/Expansion/raw/2019'
-PATH_METADATA = '/media/marycamila/Expansion/raw/active_fire/metadata'
-MAX_PIXEL_VALUE = 65535
 
 images_test = pd.read_csv('/home/marycamila/flaresat/dataset/images_test.csv')
 masks_test = pd.read_csv('/home/marycamila/flaresat/dataset/masks_test.csv')
