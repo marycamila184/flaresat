@@ -1,6 +1,13 @@
 from skimage.transform import resize
 import tifffile as tiff
 import numpy as np
+
+from osgeo import gdal
+from osgeo import osr
+from osgeo import ogr
+
+gdal.UseExceptions()
+
 import glob
 import os
 import re
@@ -81,33 +88,59 @@ def get_toa_patch(file_path, method):
 
 # -------------------- SCENE Preprocessing 
 
-def get_toa_scene(entity):
+def get_row_col(long, lat, path):
+    ds = gdal.Open(path, gdal.GA_ReadOnly)
+    target = osr.SpatialReference(wkt=ds.GetProjection())
+
+    source = osr.SpatialReference()
+    source.ImportFromEPSG(4326)
+
+    transform = osr.CoordinateTransformation(source, target)
+
+    point = ogr.Geometry(ogr.wkbPoint)
+    point.AddPoint(lat, long)
+
+    point.Transform(transform)
+
+    geotransform = ds.GetGeoTransform()
+
+    col = int((point.GetX() - geotransform[0]) / geotransform[1])
+    row = int((geotransform[3] - point.GetY()) / abs(geotransform[5]))
+
+    return row, col
+
+
+def get_toa_scene(scene_dir, method):
     band_list = []
 
+    # Deprecated as it was used in RXD
     # Fire scene uses '_' - Example: LC08_L1TP_117016_20200926
-    if '_' in entity:
-        scene_dir = glob.glob(os.path.join(PATH_SCENE_FIRE, f"*{entity}*"))[0]
-    else:
-        # Flare scene
-        scene_dir = os.path.join(PATH_MTL_SCENE, entity)
+    # if '_' in entity:
+    #    scene_dir = glob.glob(os.path.join(PATH_SCENE_FIRE, f"*{entity}*"))[0]
+    # else:
+    #scene_dir = os.path.join(PATH_MTL_SCENE, entity)
         
     metadata_file = glob.glob(os.path.join(scene_dir, '*_MTL.txt'))[0]
     metadata = open_txt_get_props(metadata_file) 
 
-    # Used 6 and 7 bands - Reference: https://www.mdpi.com/2071-1050/15/6/5333
-    for band in range(6, 8):
-        tiff_path = glob.glob(os.path.join(scene_dir, '*_B' + str(band) + '.TIF'))[0]
-        tiff_data = tiff.imread(tiff_path)
+    if method == 'RADIANCE':
+        len_bands = 10
+    else:
+        len_bands = 8
+    
+    for band in range(0, len_bands):
+        if band != 7: # Band 8 not used as it has a different resolution
+            tiff_path = glob.glob(os.path.join(scene_dir, '*_B' + str(band + 1) + '.TIF'))[0]
+            tiff_data = tiff.imread(tiff_path)
 
-        # RXD used Reflectance - Reference: https://www.mdpi.com/2071-1050/15/6/5333 
-        attribute_mult = 'REFLECTANCE_MULT_BAND_' + str(band)
-        attribute_add = 'REFLECTANCE_ADD_BAND_' + str(band)
-        reflectance_mult_band = float(metadata[attribute_mult])
-        reflectance_add_band = float(metadata[attribute_add])
+            attribute_mult = method + '_MULT_BAND_' + str(band + 1)
+            attribute_add = method + '_ADD_BAND_' + str(band + 1)
+            mult_band = float(metadata[attribute_mult])
+            add_band = float(metadata[attribute_add])
 
-        # Conversion to TOA Reflectance - https://www.usgs.gov/landsat-missions/using-usgs-landsat-level-1-data-product
-        toa_radiance = (tiff_data * reflectance_mult_band) + reflectance_add_band
-        band_list.append(toa_radiance)
+            # Conversion to TOA Reflectance - https://www.usgs.gov/landsat-missions/using-usgs-landsat-level-1-data-product
+            toa_scene = (tiff_data * mult_band) + add_band
+            band_list.append(toa_scene)
     
     toa_scene = np.stack(band_list, axis=-1)
 

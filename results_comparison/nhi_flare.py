@@ -1,6 +1,7 @@
 import numpy as np
 import pandas as pd
 
+from methods.comparison_methods import get_toa_nhi
 from utils.metrics import get_metrics_results
 from utils.plot_infereces import plot_inferences
 from utils.process_scene_toa import *
@@ -16,21 +17,10 @@ masks_test = pd.read_csv('/home/marycamila/flaresat/dataset/masks_test.csv')
 # NHI flare reference - https://ieeexplore.ieee.org/document/9681815
 def get_toa_nhi_patch(file_path):
     img = get_toa_patch(file_path, 'RADIANCE')    
-    img = img[:, :, [4,5,6]]   
-
-    # Reference https://ieeexplore.ieee.org/document/9681815 and https://www.usgs.gov/faqs/what-are-band-designations-landsat-satellites
-    lswir2 = img [:, :, 2]
-    lswir1 = img [:, :, 1]
-    lnir = img [:, :, 0]
-
-    nhiswir = (lswir2 - lswir1) / (lswir2 + lswir1)
-    nhiswnir = (lswir1 - lnir) / (lswir1 + lnir)
-
-    hp = np.where((nhiswir > 0) | (nhiswnir > 0), 1, 0)
-
+    hp = get_toa_nhi_patch(img)
     return hp
 
-test_images = np.array([get_toa_nhi_patch(path) for path in images_test['tiff_file']])
+test_images = np.array([get_toa_nhi(path) for path in images_test['tiff_file']])
 test_masks = np.array([get_mask_patch(path) for path in masks_test['mask_file']])
 
 y_pred_flat = test_images.flatten()

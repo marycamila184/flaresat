@@ -23,3 +23,58 @@ def plot_inferences(test_masks, test_images, output_path, list_entities_plot, me
         file_name = f"inference_{method}_{index}.png"
         save_path = os.path.join(output_path, file_name)
         cv2.imwrite(save_path, concatenated_image)
+
+def plot_scene_and_squared(full_scene, scene, scene_id, row, col, output_path, method):
+    # Process grayscale scene
+    file_name_scene = f"scene_{method}_{scene_id}.png"
+    save_path_scene = os.path.join(output_path, file_name_scene)
+
+    scene = cv2.normalize(scene, None, 0, 255, cv2.NORM_MINMAX)
+    scene = cv2.cvtColor(scene.astype(np.uint8), cv2.COLOR_GRAY2BGR)
+
+    square_top_left = (max(0, col - 25), max(0, row - 25))
+    square_bottom_right = (min(scene.shape[1], col + 25), min(scene.shape[0], row + 25))
+
+    cv2.rectangle(scene, square_top_left, square_bottom_right, (0, 255, 0), 2)
+    cv2.imwrite(save_path_scene, scene)
+
+    # Print B7 scene
+    file_name_b7 = f"scene_B7_{method}_{scene_id}.png"
+    save_path_b7 = os.path.join(output_path, file_name_b7)
+
+    b7_band = cv2.normalize(full_scene[:, :, 6], None, 0, 255, cv2.NORM_MINMAX).astype(np.uint8)
+    b7_band = cv2.cvtColor(b7_band, cv2.COLOR_GRAY2BGR)
+
+    square_top_left = (max(0, col - 25), max(0, row - 25))
+    square_bottom_right = (min(b7_band.shape[1], col + 25), min(b7_band.shape[0], row + 25))
+
+    cv2.rectangle(b7_band, square_top_left, square_bottom_right, (0, 255, 0), 2)
+    cv2.imwrite(save_path_b7, b7_band)
+
+    # Print COLORED scene
+    file_name_scene_color = f"scene_colored_{method}_{scene_id}.png"
+    save_path_scene_color = os.path.join(output_path, file_name_scene_color)
+
+    if method == 'nhi':
+        red_band = full_scene[:, :, 3]  # Band 4 (Red)
+        green_band = full_scene[:, :, 2]  # Band 3 (Green)
+        blue_band = full_scene[:, :, 1]  # Band 2 (Blue)
+    else:
+        red_band = full_scene[:, :, 6]  # Band 7 (SWIR)
+        green_band = full_scene[:, :, 5]  # Band 6 (SWIR)
+        blue_band = full_scene[:, :, 4]  # Band 5 (NIR)
+
+    # Normalize each band separately to enhance contrast
+    red_band = cv2.normalize(red_band, None, 0, 255, cv2.NORM_MINMAX).astype(np.uint8)
+    green_band = cv2.normalize(green_band, None, 0, 255, cv2.NORM_MINMAX).astype(np.uint8)
+    blue_band = cv2.normalize(blue_band, None, 0, 255, cv2.NORM_MINMAX).astype(np.uint8)
+
+    # Stack the bands into a false-color composite
+    scene_color = np.dstack((red_band, green_band, blue_band))
+    scene_color = cv2.cvtColor(scene_color, cv2.COLOR_RGB2BGR)
+
+    square_top_left_fc = (max(0, col - 25), max(0, row - 25))
+    square_bottom_right_fc = (min(scene_color.shape[1], col + 25), min(scene_color.shape[0], row + 25))
+
+    cv2.rectangle(scene_color, square_top_left_fc, square_bottom_right_fc, (0, 255, 0), 2)
+    cv2.imwrite(save_path_scene_color, scene_color)
