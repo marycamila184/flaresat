@@ -21,7 +21,7 @@ for method in methods:
         if method == 'nhi':
             # NHI flare reference - https://ieeexplore.ieee.org/document/9681815
             scene = get_toa_scene(scene_path, 'RADIANCE')
-            processed_scene = get_toa_nhi(scene)
+            # processed_scene = get_toa_nhi(scene)
         else:
             # Texas gas flare detection reference - https://www.sciencedirect.com/science/article/pii/S1569843222002631
             scene = get_toa_scene(scene_path, 'REFLECTANCE')

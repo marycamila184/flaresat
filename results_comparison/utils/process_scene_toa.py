@@ -1,4 +1,6 @@
+import math
 from skimage.transform import resize
+from rasterio.windows import Window
 import tifffile as tiff
 import numpy as np
 
@@ -17,6 +19,11 @@ PATH_MTL_SCENE = '/media/marycamila/Expansion/raw/2019'
 PATH_SSD_SCENE = '/media/marycamila/KINGSTON/raw'
 PATH_MTL_FIRE = '/media/marycamila/Expansion/raw/active_fire/metadata'
 PATH_SCENE_FIRE = '/media/marycamila/Expansion/raw/active_fire/scenes'
+PATCH_SIZE = 256
+
+# Reference - https://www.usgs.gov/landsat-missions/landsat-collection-2-quality-assessment-bands
+# Landsat Collection 2 Level-1 and Level-2 QA Bands
+
 
 # -------------------- Common methods
 
@@ -143,3 +150,81 @@ def get_toa_scene(scene_dir, method):
     toa_scene = np.stack(band_list, axis=-1)
 
     return toa_scene
+
+
+def get_cloud_mask_patch(row_index, col_index, mask_scene_tiff):
+    height, width = mask_scene_tiff.shape
+
+    row = row_index * 256
+    col = col_index * 256
+
+    if (min(PATCH_SIZE, width - col) < PATCH_SIZE):
+        col = width - PATCH_SIZE
+
+    if (min(PATCH_SIZE, height - row) < PATCH_SIZE):
+        row = height - PATCH_SIZE
+
+    window = Window(col, row, PATCH_SIZE, PATCH_SIZE)
+
+    patch = mask_scene_tiff[window.row_off:window.row_off + window.height,
+                 window.col_off:window.col_off + window.width]
+    return patch
+
+
+def get_row_col_from_index(scene_cloud_mask, patch_index):
+    rows, cols = scene_cloud_mask.shape
+
+    nx = math.ceil(cols / PATCH_SIZE) 
+    # ny = math.ceil(rows / PATCH_SIZE) 
+
+    row_patch = int((patch_index - 1) // nx )
+    col_patch = int((patch_index - 1) % nx)
+
+    return row_patch, col_patch
+    
+
+def get_cloud_mask(file_path):
+    if 'flare_patches' in file_path:
+        entity_id = file_path.split('_')[2]
+
+        try:
+            path = os.path.join(PATH_MTL_SCENE, entity_id)
+            qa_band_path = glob.glob(os.path.join(path, '*_QA_PIXEL.TIF'))[0]     
+        except:
+            path = os.path.join(PATH_SSD_SCENE, entity_id)
+            qa_band_path = glob.glob(os.path.join(path, '*_QA_PIXEL.TIF'))[0]
+        finally:
+            file_parts = file_path.split('_')
+            row, col = int(file_parts[3]), int(file_parts[4])
+            
+            scene_cloud_mask = tiff.imread(qa_band_path)
+
+    else:
+        # In case of fire patches
+        scene_id = file_path.split('/')[6]
+        scene_id = scene_id.split('_')[:-4]
+        scene_id = '_'.join(scene_id)
+        path = os.path.join(PATH_SCENE_FIRE, scene_id)
+        path += '*'
+        fire_scene_dir = glob.glob(path)[0]
+        qa_band_path = glob.glob(os.path.join(fire_scene_dir, '*_QA_PIXEL.TIF'))[0]
+        
+        # Entity name conversion to get the patch
+        # Example: "'/home/marycamila/flaresat/dataset/non_fire_patches/LC08_L1TP_025033_20200921_20200921_01_RT_p00410.tiff'"
+        patch_index_str = file_path.split("_")[-1]
+        patch_index = int(patch_index_str.replace(".tiff", "").replace("p", ""))
+        
+        scene_cloud_mask = tiff.imread(qa_band_path)
+        row, col = get_row_col_from_index(scene_cloud_mask, patch_index)
+
+    patch_cloud_mask = get_cloud_mask_patch(row, col, scene_cloud_mask)
+
+    cloud_bit = 1 << 3  # Bit 3 - Cloud values
+    cloud_confidence_bit = 3 << 8 # Bits 8-9 for cloud confidence (00, 01, 10, 11)
+
+    cloud_mask = np.where((patch_cloud_mask & cloud_bit) > 0, 1, 0)
+
+    high_confidence_mask = (patch_cloud_mask & cloud_confidence_bit) == cloud_confidence_bit
+    cloud_mask[~high_confidence_mask] = 0
+    
+    return cloud_mask

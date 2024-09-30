@@ -2,6 +2,7 @@ import math
 import numpy as np
 import pandas as pd
 
+from methods.comparison_methods import calculate_global_rxd
 from utils.metrics import get_metrics_results
 from utils.plot_infereces import plot_inferences
 from utils.process_scene_toa import *
@@ -27,31 +28,6 @@ def get_str_entity(file_path):
         str_entity = '_'.join(str_entity)
 
     return str_entity
-
-
-def calculate_global_rxd(scene, entity):
-    X = scene.reshape(-1, N_CHANNELS)
-    
-    mu = np.mean(X, axis=0)
-    
-    cov_matrix = np.cov(X, rowvar=False)
-    cov_matrix_inv = np.linalg.inv(cov_matrix)
-
-    diffs = X - mu
-
-    # Reference https://www.mdpi.com/2071-1050/15/6/5333 - 3. The Reed–Xiaoli Detector Method
-    distances = np.sqrt(np.einsum('ij,ij->i', diffs @ cov_matrix_inv, diffs))
-
-    distances_image = distances.reshape(scene.shape[0], scene.shape[1])
-
-    rxd_scene_img = ((distances_image - distances_image.min()) / 
-                     (distances_image.max() - distances_image.min()) * 255).astype(np.uint8)
-    
-    cv2.imwrite(os.path.join(OUTPUT_PATH, 'test_plot', f'scene_rxd_{entity}.png'), rxd_scene_img)
-
-    mask_scene = distances_image > THRESHOLD
-
-    return mask_scene
 
 
 def find_patch(row_patch, col_patch, tiff_scene):
@@ -87,7 +63,7 @@ for entity in unique_entities:
     patches = images_test[images_test["tiff_file"].str.contains(entity)]["tiff_file"]
    
     scene = get_toa_scene(entity)
-    rxd_scene_mask = calculate_global_rxd(scene, entity)
+    rxd_scene_mask = calculate_global_rxd(scene, N_CHANNELS, entity)
 
     for patch_file in patches:
         if '_' in entity:
