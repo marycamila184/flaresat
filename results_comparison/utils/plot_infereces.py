@@ -2,14 +2,29 @@ import numpy as np
 import cv2
 import os
 
-def plot_inferences(test_masks, test_images, output_path, list_entities_plot, method, n_images=30):
+def plot_inferences(truth_masks, method_masks, truth_patches, cloud_masks, flaresat_masks, output_path, list_entities_plot, method, n_images=30):
     for index in range(n_images):
-        original_image = test_masks[index][:, :]
+        original_image = truth_patches[index][:, :, 6]
         original_image = cv2.normalize(original_image, None, 0, 255, cv2.NORM_MINMAX)
         original_image = cv2.cvtColor(original_image.astype(np.uint8), cv2.COLOR_GRAY2BGR)
-        cv2.putText(original_image, 'Ground Truth Mask', (10, 25), cv2.FONT_HERSHEY_SIMPLEX, 0.3, (255, 255, 255), 1)
+        cv2.putText(original_image, 'B7 Landsat', (10, 25), cv2.FONT_HERSHEY_SIMPLEX, 0.3, (255, 255, 255), 1)
 
-        predicted_mask = test_images[index][:, :]
+        truth_mask = truth_masks[index][:, :]
+        truth_mask = cv2.normalize(truth_mask, None, 0, 255, cv2.NORM_MINMAX)
+        truth_mask = cv2.cvtColor(truth_mask.astype(np.uint8), cv2.COLOR_GRAY2BGR)
+        cv2.putText(truth_mask, 'Ground Truth Mask', (10, 25), cv2.FONT_HERSHEY_SIMPLEX, 0.3, (255, 255, 255), 1)
+
+        cloud_mask = cloud_masks[index][:, :]
+        cloud_mask = cv2.normalize(cloud_mask, None, 0, 255, cv2.NORM_MINMAX)
+        cloud_mask = cv2.cvtColor(cloud_mask.astype(np.uint8), cv2.COLOR_GRAY2BGR)
+        cv2.putText(cloud_mask, 'Cloud Mask', (10, 25), cv2.FONT_HERSHEY_SIMPLEX, 0.3, (255, 255, 255), 1)
+
+        flaresat_mask = flaresat_masks[index].squeeze()
+        flaresat_mask = cv2.normalize(flaresat_mask, None, 0, 255, cv2.NORM_MINMAX)
+        flaresat_mask = cv2.cvtColor(flaresat_mask.astype(np.uint8), cv2.COLOR_GRAY2BGR)
+        cv2.putText(flaresat_mask, 'Predicted Flare Mask', (10, 25), cv2.FONT_HERSHEY_SIMPLEX, 0.3, (255, 255, 255), 1)
+
+        predicted_mask = method_masks[index][:, :]
         predicted_mask = predicted_mask.astype(np.uint8)
         predicted_mask = cv2.normalize(predicted_mask, None, 0, 255, cv2.NORM_MINMAX)
         predicted_mask = cv2.cvtColor(predicted_mask.astype(np.uint8), cv2.COLOR_GRAY2BGR)
@@ -18,11 +33,12 @@ def plot_inferences(test_masks, test_images, output_path, list_entities_plot, me
             text_image += " " + list_entities_plot[index]
         cv2.putText(predicted_mask, str(text_image).upper() + ' Predicted Mask', (10, 25), cv2.FONT_HERSHEY_SIMPLEX, 0.3, (255, 255, 255), 1)
 
-        concatenated_image = np.hstack((original_image, predicted_mask))
+        concatenated_image = np.hstack((original_image, cloud_mask, truth_mask, predicted_mask, flaresat_mask))
 
         file_name = f"inference_{method}_{index}.png"
         save_path = os.path.join(output_path, file_name)
         cv2.imwrite(save_path, concatenated_image)
+
 
 def plot_scene_and_squared(full_scene, scene, scene_id, row, col, output_path, method):
     # Process grayscale scene

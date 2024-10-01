@@ -72,23 +72,4 @@ def get_toa_texas(mask_cloud, img):
     # Remove cloud pixels (exclude flagged pixels that overlap with cloud pixels)
     flare_segmented_pixels = np.where(mask_cloud == 0, flagged_pixels, 0)
 
-    plt.subplot(1, 3, 1)
-    plt.imshow(flare_segmented_pixels, cmap='hot', interpolation='nearest')
-    plt.title('Flare Segmented Pixels')
-    plt.axis('off')
-    
-    # Display and save the selected image band
-    plt.subplot(1, 3, 2)
-    plt.imshow(img[:, :, 2], cmap='gray', interpolation='nearest')  # Change band index if needed
-    plt.title('Image Band 6')
-    plt.axis('off')
-    
-    # Display and save the cloud mask
-    plt.subplot(1, 3, 3)
-    plt.imshow(mask_cloud[:, :], cmap='gray', interpolation='nearest')  # Change band index if needed
-    plt.title('Cloud Mask Band 6')
-    plt.axis('off')
-    plt.savefig(f'cloud_mask_band.png', bbox_inches='tight', pad_inches=0.1)
-
-    
     return flare_segmented_pixels

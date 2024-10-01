@@ -175,13 +175,13 @@ def get_row_col_from_index(scene_cloud_mask, patch_index):
     rows, cols = scene_cloud_mask.shape
 
     nx = math.ceil(cols / PATCH_SIZE) 
-    # ny = math.ceil(rows / PATCH_SIZE) 
+    ny = math.ceil(rows / PATCH_SIZE) 
 
-    row_patch = int((patch_index - 1) // nx )
-    col_patch = int((patch_index - 1) % nx)
+    row_patch = int((patch_index - 1) % ny)
+    col_patch = int((patch_index - 1) // ny)
 
     return row_patch, col_patch
-    
+
 
 def get_cloud_mask(file_path):
     if 'flare_patches' in file_path:
@@ -219,12 +219,17 @@ def get_cloud_mask(file_path):
 
     patch_cloud_mask = get_cloud_mask_patch(row, col, scene_cloud_mask)
 
-    cloud_bit = 1 << 3  # Bit 3 - Cloud values
-    cloud_confidence_bit = 3 << 8 # Bits 8-9 for cloud confidence (00, 01, 10, 11)
+    ## Filter for cloud only
+    # clouds_bit_mask = 1 << 3
+    # cloud_mask = np.where(np.bitwise_and(patch_cloud_mask, clouds_bit_mask) > 0, 1, 0)
 
-    cloud_mask = np.where((patch_cloud_mask & cloud_bit) > 0, 1, 0)
+    # Filter for cloud and cloud shadow
+    clouds_bit_mask = 1 << 3  # Bit 3 for high confidence cloud
+    cloud_shadow_bit_mask = 1 << 4  # Bit 4 for high confidence cloud shadow
 
-    high_confidence_mask = (patch_cloud_mask & cloud_confidence_bit) == cloud_confidence_bit
-    cloud_mask[~high_confidence_mask] = 0
-    
-    return cloud_mask
+    mask = (np.bitwise_and(patch_cloud_mask, clouds_bit_mask) > 0) | \
+        (np.bitwise_and(patch_cloud_mask, cloud_shadow_bit_mask) > 0)
+
+    cloud_and_shadow_mask = np.where(mask, 1, 0)
+
+    return cloud_and_shadow_mask
