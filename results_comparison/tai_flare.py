@@ -87,4 +87,4 @@ y_pred = model.predict(truth_patches)
 y_pred_thresholded = np.where(y_pred > THRESHOLD, 1, 0)
 flaresat_output = (y_pred_thresholded * 255).astype(np.uint8)
 
-plot_inferences(truth_masks, method_masks, truth_patches, cloud_masks, flaresat_output, OUTPUT_PATH, list_entities_plot=[], method="texas", n_images=856)
+plot_inferences(truth_masks, method_masks, truth_patches, cloud_masks, flaresat_output, OUTPUT_PATH, list_entities_plot=[], method="texas", n_images=len(truth_masks))

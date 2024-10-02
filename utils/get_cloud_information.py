@@ -10,7 +10,7 @@ PATH_SSD_SCENE = '/media/marycamila/KINGSTON/raw'
 PATH_MTL_FIRE = '/media/marycamila/Expansion/raw/active_fire/metadata'
 
 def get_str_entity(file_path):
-    if 'flare_patches' in file_path:
+    if 'flare_patches' in file_path or 'volcano' in file_path:
         str_entity = file_path.split('_')[2]
     else:
         str_entity = file_path.split('/')[6]

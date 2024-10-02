@@ -11,7 +11,7 @@ import re
 
 PATCH_SIZE = 256
 
-patch = '/home/marycamila/flaresat/dataset/non_fire_patches/LC08_L1TP_046031_20200908_20200908_01_RT_p00879.tiff'
+patch = '/home/marycamila/flaresat/dataset/fire_patches/LC08_L1TP_046031_20200908_20200908_01_RT_p00879.tiff'
 scene = '/media/marycamila/Expansion/raw/active_fire/scenes/LC08_L1TP_046031_20200908_20200919_02_T1'
 patch_index = 879
 

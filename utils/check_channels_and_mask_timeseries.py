@@ -28,7 +28,7 @@ list_image = ['LC81950372019237LGN00', 'LC81950372019221LGN00', 'LC8195037201926
 row_col_index = '21_12'
 for scene in list_image:
     file_path = f'/home/marycamila/flaresat/dataset/flare_patches/fire_{scene}_{row_col_index}_patch.tiff'
-    mask_path = f'/home/marycamila/flaresat/dataset/mask_patches/fire_{scene}_{row_col_index}_mask.tiff'
+    mask_path = f'/home/marycamila/flaresat/dataset/flare_mask_patches/fire_{scene}_{row_col_index}_mask.tiff'
     file = f'patch_{scene}_{row_col_index}'
     mask = f'mask_{scene}_{row_col_index}'
     read_and_save_tiff_as_png(file_path, mask_path, file, mask)

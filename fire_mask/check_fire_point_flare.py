@@ -10,9 +10,10 @@ YEAR = "2019"
 MONTH = "03"
 
 # Constants
-PATH_MASK = "/home/marycamila/flaresat/dataset/mask_patches"
+PATH_MASK = "/home/marycamila/flaresat/dataset/flare_mask_patches"
 PATH_SQUARE = "/home/marycamila/flaresat/dataset/flare_patches_square"
 PATH_FLARE = "/home/marycamila/flaresat/dataset/flare_patches"
+
 PATH_FIRE = "/home/marycamila/flaresat/fire_mask/fire_images/" + YEAR + "/" + MONTH
 PATH_CSV = "/home/marycamila/flaresat/source/landsat_scenes/2019/active_fire"
 PATH_PATCHES = "/home/marycamila/flaresat/source/landsat_scenes/2019/valid_patches"
@@ -57,6 +58,7 @@ def summary_white_blobs(df_: pd.DataFrame, entity: str) -> list:
 
     return list_fire_detected
 
+
 def check_overlapping_blob(df_filter_white: pd.DataFrame, df_filter_fire: pd.DataFrame) -> pd.DataFrame:
     for row_index in df_filter_white['row_index'].unique():
         df_grouped = df_filter_white[df_filter_white["row_index"] == row_index]
@@ -84,6 +86,7 @@ def check_overlapping_blob(df_filter_white: pd.DataFrame, df_filter_fire: pd.Dat
                 df_filter_white.loc[index_blob, "squares_overlapping"] = count
 
     return df_filter_white
+
 
 if __name__ == "__main__":
     csv_path = os.path.join(PATH_CSV, f"scenes_{MONTH}_queue.csv")

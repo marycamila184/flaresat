@@ -20,7 +20,7 @@ PATCH_SIZE = 256
 
 
 def get_str_entity(file_path):
-    if 'flare_patches' in file_path:
+    if 'flare_patches' in file_path or 'volcano' in file_path:
         str_entity = file_path.split('_')[2]
     else:
         str_entity = file_path.split('/')[6]
@@ -68,7 +68,7 @@ for entity in unique_entities:
     for patch_file in patches:
         if '_' in entity:
             # Entity name conversion to get the patch
-            # Example: "'/home/marycamila/flaresat/dataset/non_fire_patches/LC08_L1TP_025033_20200921_20200921_01_RT_p00410.tiff'"
+            # Example: "'/home/marycamila/flaresat/dataset/fire_patches/LC08_L1TP_025033_20200921_20200921_01_RT_p00410.tiff'"
             patch_index_str = patch_file.split("_")[-1]
             patch_index = int(patch_index_str.replace(".tiff", "").replace("p", ""))
 
@@ -106,7 +106,7 @@ for entity in unique_entities:
             mask_row = masks_test["mask_file"].str.contains(entity_mask)
         else:
             # Entity name conversion to get the mask
-            # Example: "'/home/marycamila/flaresat/dataset/mask_patches/fire_LC81670242019233LGN00_14_27_mask.tiff'"
+            # Example: "'/home/marycamila/flaresat/dataset/flare_mask_patches/fire_LC81670242019233LGN00_14_27_mask.tiff'"
             entity_mask = entity_mask.replace('patch', 'mask')
             mask_row = masks_test["mask_file"].str.contains(entity_mask)
         

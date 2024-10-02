@@ -10,8 +10,8 @@ MAX_PIXEL_VALUE = 65535
 PATH_METADATA = '/media/marycamila/Expansion/raw/active_fire/metadata'
 PATH_CSV_POINTS = '/home/marycamila/flaresat/source/csv_points/gas_flaring_points.csv'
 PATCH_ACTIVE_FIRE = '/media/marycamila/Expansion/raw/active_fire/landsat_patches'
-PATH_NON_FLARE = '/home/marycamila/flaresat/dataset/non_fire_patches'
-PATCH_MASK_NON_FLARE = '/home/marycamila/flaresat/dataset/non_fire_mask_patches' 
+PATH_FIRE = '/home/marycamila/flaresat/dataset/fire_patches'
+PATH_MASK_FIRE = '/home/marycamila/flaresat/dataset/fire_mask_patches' 
 
 def parse_metadata(file_path):
     metadata = {}
@@ -84,12 +84,12 @@ for filename in valid_landsat_scenes:
         patch_file_path = os.path.join(PATCH_ACTIVE_FIRE, new_filename)
         patch_img = tiff.imread(patch_file_path)
         patch_img = np.resize(patch_img, (256, 256, 10))
-        patch_img = np.float32(patch_img) / MAX_PIXEL_VALUE      
+        patch_img = np.float32(patch_img) / MAX_PIXEL_VALUE
 
         new_filename = new_filename.replace('.tif', '.tiff')
-        patch_file_path = os.path.join(PATH_NON_FLARE, new_filename)
+        patch_file_path = os.path.join(PATH_FIRE, new_filename)
         tiff.imwrite(patch_file_path, patch_img)
 
-        mask_non_fire = Image.new('L', (256, 256), 0)
-        mask_file_path = os.path.join(PATCH_MASK_NON_FLARE, new_filename)
-        mask_non_fire.save(mask_file_path)
+        mask_active_fire = Image.new('L', (256, 256), 0)
+        mask_file_path = os.path.join(PATH_MASK_FIRE, new_filename)
+        mask_active_fire.save(mask_file_path)

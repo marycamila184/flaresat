@@ -178,7 +178,7 @@ def main():
 
         df_entity = df_points[df_points["entity_id_sat"] == image_sat]
 
-        root_path_image = PATH_RAW + "/" + YEAR +"/" + image_sat
+        root_path_image = os.path.join(PATH_RAW, YEAR, image_sat)
 
         multichannel_tiff = preprocessing_tiff(root_path_image)
         img = np.float32(multichannel_tiff)/MAX_PIXEL_VALUE

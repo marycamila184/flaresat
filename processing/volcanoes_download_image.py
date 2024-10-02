@@ -75,9 +75,7 @@ def main():
     list_download_unique = df_images["entity_id_sat"].unique()
 
     list_scenes_to_download = list(set(list_download_unique) - set(list_entities_downloaded))
-    print(len(list_entities_downloaded))
     download_image(list_scenes_to_download)
-    unzip_tar_files()
 
 if __name__ == "__main__":
     main()
