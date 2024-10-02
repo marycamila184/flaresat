@@ -1,23 +1,23 @@
 import numpy as np
-import glob as glob
 import pandas as pd
 import os
 
-from metadata_utils import *
+import glob as glob
 
+from metadata_utils import *
 
 PATH_MTL_SCENE = '/media/marycamila/Expansion/raw/2019'
 PATH_SSD_SCENE = '/media/marycamila/KINGSTON/raw'
 PATH_MTL_FIRE = '/media/marycamila/Expansion/raw/active_fire/metadata'
 PATH_MTL_VOLCANO = '/media/marycamila/Expansion/raw/volcanoes'
 
-
 images = pd.read_csv('/home/marycamila/flaresat/dataset/images_train.csv')
+
 entities_filter = np.array([get_str_entity(path) for path in images['tiff_file']])
 unique_entities = list(set(entities_filter))
 
-count_cloud = 0
-count_unknown = 0
+count_daily = 0
+count_night = 0
 
 for entity in unique_entities:
     patches = images[images["tiff_file"].str.contains(entity)]["tiff_file"]
@@ -33,22 +33,13 @@ for entity in unique_entities:
     if scene_dir and metadata_file:
         metadata = open_txt_get_props(metadata_file)
     
-    cloud_cover = float(metadata['CLOUD_COVER'])
-    quality_oli = int(metadata['IMAGE_QUALITY_OLI'])
-    quality_tirs = int(metadata['IMAGE_QUALITY_TIRS'])
+    sun_elevatioon = float(metadata['SUN_ELEVATION'])
 
-    # if quality_tirs == 9:
-    #     count_cloud += 1
-    # else:
-    #     print(entity)
-    #     count_unknown += 1
-
-    if cloud_cover >= 0.00:
-        count_cloud += 1
+    if sun_elevatioon > 0:
+        count_daily += len(patches)
     else:
-        print("cloud_cover = -1 " + entity)
-        count_unknown += 1
-    
+        count_night += len(patches)
 
-print("Cloud Average: " + str(count_cloud))
-print("Unknown cloud: " + str(count_unknown))
+
+print("Daily patches: " + str(count_daily))
+print("Night patches: " + str(count_night))

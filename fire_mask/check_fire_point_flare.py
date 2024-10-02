@@ -18,6 +18,9 @@ PATH_FIRE = "/home/marycamila/flaresat/fire_mask/fire_images/" + YEAR + "/" + MO
 PATH_CSV = "/home/marycamila/flaresat/source/landsat_scenes/2019/active_fire"
 PATH_PATCHES = "/home/marycamila/flaresat/source/landsat_scenes/2019/valid_patches"
 PATCH_SIZE = 256
+
+# 750 meter from VIIRs precision used to generate flare points
+# https://www.mdpi.com/1996-1073/9/1/14
 HALF_SIZE_SQUARE = 35
 
 def summary_white_blobs(df_: pd.DataFrame, entity: str) -> list:
@@ -88,6 +91,17 @@ def check_overlapping_blob(df_filter_white: pd.DataFrame, df_filter_fire: pd.Dat
     return df_filter_white
 
 
+def move_file(file_name, source_dir, dest_dir):
+    source_path = os.path.join(source_dir, file_name)
+    dest_path = os.path.join(dest_dir, file_name)
+    
+    if os.path.exists(source_path):
+        shutil.copy(source_path, dest_path)
+        print(f'File copied: {file_name}')
+    else:
+        print(f'File not found: {file_name}')
+
+
 if __name__ == "__main__":
     csv_path = os.path.join(PATH_CSV, f"scenes_{MONTH}_queue.csv")
     df = pd.read_csv(csv_path)
@@ -122,6 +136,7 @@ if __name__ == "__main__":
     colunt_invalid_flare = 0
 
     list_valid_flares = []
+    list_test = []
 
     for name, group in grouped:
         if (group['squares_overlapping'] == 0).any():
@@ -131,32 +146,25 @@ if __name__ == "__main__":
                 file_path_prefix = "fire_" + patch["entity_id_sat"] + "_" + str(patch["row_index"]) + "_" + str(patch["col_index"])
                 count_flare += 1
                 list_valid_flares.append(group)
+                list_test.append(file_path_prefix)
 
                 # Move patch
                 patch_file = file_path_prefix + "_patch.tiff"
-                patch_source = os.path.join(PATH_FIRE, patch_file)
-                patch_destination = os.path.join(PATH_FLARE, patch_file)
-
-                shutil.copy(patch_source, patch_destination)
+                move_file(patch_file, PATH_FIRE, PATH_FLARE)
 
                 # Move mask
-                patch_file = file_path_prefix + "_mask.tiff"
-                patch_source = os.path.join(PATH_FIRE, patch_file)
-                patch_destination = os.path.join(PATH_MASK, patch_file)
-
-                shutil.copy(patch_source, patch_destination)
+                mask_file = file_path_prefix + "_mask.tiff"
+                move_file(mask_file, PATH_FIRE, PATH_MASK)
 
                 # Move square
-                patch_file = file_path_prefix + "_square.tif"
-                patch_source = os.path.join(PATH_FIRE, patch_file)
-                patch_destination = os.path.join(PATH_SQUARE, patch_file)
-
-                shutil.copy(patch_source, patch_destination)
+                square_file = file_path_prefix + "_square.tif"
+                move_file(square_file, PATH_FIRE, PATH_SQUARE)
 
                 print(f'File copied {file_path_prefix}')
 
-    
+    print("Unique patches with validated flares: " + str(len(set(list_test))))
     df_valid_flares = pd.concat(list_valid_flares)
     file_name = os.path.join(PATH_PATCHES, f"valid_patches_{MONTH}.csv")
+    
     df_valid_flares.to_csv(file_name, index=False)
             
