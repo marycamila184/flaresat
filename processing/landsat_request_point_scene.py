@@ -43,6 +43,11 @@ def make_request(item, token, year, month_str):
                             "coordinates": [longitude, latitude],
                         },
                     },
+                    "cloudCoverFilter": {
+                        "max": 10,
+                        "min": 0,
+                        "includeUnknown": "true"
+                    }
                 },
             }
 

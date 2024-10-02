@@ -28,8 +28,8 @@ THRESHOLD = 0.50
 
 OUTPUT_PATH = '/home/marycamila/flaresat/results_comparison/output/texas'
 
-images_test = pd.read_csv('/home/marycamila/flaresat/dataset/images_fire_test.csv')
-masks_test = pd.read_csv('/home/marycamila/flaresat/dataset/images_fire_mask.csv')
+images_test = pd.read_csv('/home/marycamila/flaresat/dataset/images_test.csv')
+masks_test = pd.read_csv('/home/marycamila/flaresat/dataset/masks_test.csv')
 
 
 def load_image(file_path, n_channels, target_size=None, bands=[]):

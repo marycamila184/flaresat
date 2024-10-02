@@ -225,10 +225,10 @@ def get_cloud_mask(file_path):
 
     # Filter for cloud and cloud shadow
     clouds_bit_mask = 1 << 3  # Bit 3 for high confidence cloud
-    cloud_shadow_bit_mask = 1 << 4  # Bit 4 for high confidence cloud shadow
+    # cloud_shadow_bit_mask = 1 << 4  # Bit 4 for high confidence cloud shadow
 
-    mask = (np.bitwise_and(patch_cloud_mask, clouds_bit_mask) > 0) | \
-        (np.bitwise_and(patch_cloud_mask, cloud_shadow_bit_mask) > 0)
+    mask = np.bitwise_and(patch_cloud_mask, clouds_bit_mask) > 0
+    #| \ (np.bitwise_and(patch_cloud_mask, cloud_shadow_bit_mask) > 0)
 
     cloud_and_shadow_mask = np.where(mask, 1, 0)
 
