@@ -7,7 +7,7 @@ from tensorflow.keras.utils import plot_model
 from matplotlib import pyplot as plt
 
 from models.transfer_learning.unet_sentinel_landcover import unet_sentinel_landcover
-from models.attention_unet import attetion_unet_model
+from models.attention_unet import unet_attention_model
 from models.unet import unet_model
 
 from generator import *
@@ -44,11 +44,12 @@ masks_validation = pd.read_csv('/home/marycamila/flaresat/dataset/masks_val.csv'
 # Create instances of the custom data generator
 train_generator = ImageMaskGenerator(
     image_list=images_train,
-    bands = BANDS,
+    bands=BANDS,
     mask_list=masks_train,
     batch_size=BATCH_SIZE,
     image_size=IMAGE_SIZE,
-    n_channels=N_CHANNELS
+    n_channels=N_CHANNELS,
+    augment=True 
 )
 
 val_generator = ImageMaskGenerator(
@@ -61,7 +62,8 @@ val_generator = ImageMaskGenerator(
 )
 
 #model = unet_model(input_size=(IMAGE_SIZE[0], IMAGE_SIZE[1], N_CHANNELS))
-model = unet_sentinel_landcover(input_size=(IMAGE_SIZE[0], IMAGE_SIZE[1], N_CHANNELS))
+model = unet_attention_model(input_size=(IMAGE_SIZE[0], IMAGE_SIZE[1], N_CHANNELS))
+#model = unet_sentinel_landcover(input_size=(IMAGE_SIZE[0], IMAGE_SIZE[1], N_CHANNELS))
 model.summary()
 
 model_view = os.path.join(OUTPUT_DIR, "model_architecture.png")
@@ -77,6 +79,7 @@ checkpoint = ModelCheckpoint(
 )
 
 print('FlareSat - Train initiated')
+
 history = model.fit(
         train_generator,
         validation_data=val_generator,

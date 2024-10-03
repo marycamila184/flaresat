@@ -26,7 +26,7 @@ def attention_block(g, x, num_filters):
     attention = layers.multiply([x, upsampled_sigmoid])
     return attention
 
-def attetion_unet_model(input_size, base_filters=32):
+def unet_attention_model(input_size, base_filters=32):
     inputs = Input(shape=input_size)
    
     # Downsampling path

@@ -147,16 +147,16 @@ for patch_volcano in list_volcanoes_patches:
     list_volcanoes.append(new_row)
 
 df_volcanoes = pd.DataFrame(list_volcanoes)
-x_train_volcano, x_temp_volcano, y_train_volcano, y_temp_volcano = train_test_split(df_volcanoes['tiff_file'], df_volcanoes['mask_file'], test_size=0.4)
-x_val_volcano, x_test_volcano, y_val_volcano, y_test_volcano = train_test_split(x_temp_volcano, y_temp_volcano, test_size=0.5)
+x_test_volcano = df_volcanoes[['tiff_file']]
+y_test_volcano = df_volcanoes[['mask_file']]
 
 # ---- MERGE FLARE, FIRE AND VOLCANOES DATASETS
 
-x_train = pd.concat([x_train, x_train_fire, x_train_volcano])
-y_train = pd.concat([y_train, y_train_fire, y_train_volcano])
+x_train = pd.concat([x_train, x_train_fire])
+y_train = pd.concat([y_train, y_train_fire])
 
-x_val = pd.concat([x_val, x_val_fire, x_val_volcano])
-y_val = pd.concat([y_val, y_val_fire, y_val_volcano])
+x_val = pd.concat([x_val, x_val_fire])
+y_val = pd.concat([y_val, y_val_fire])
 
 x_test = pd.concat([x_test, x_test_fire, x_test_volcano])
 y_test = pd.concat([y_test, y_test_fire, y_test_volcano])
@@ -165,14 +165,19 @@ x_train.to_csv(os.path.join(PATH_DATASET, 'images_train.csv'), index=False)
 y_train.to_csv(os.path.join(PATH_DATASET, 'masks_train.csv'), index=False)
 x_val.to_csv(os.path.join(PATH_DATASET, 'images_val.csv'), index=False)
 y_val.to_csv(os.path.join(PATH_DATASET, 'masks_val.csv'), index=False)
-
 x_test.to_csv(os.path.join(PATH_DATASET, 'images_test.csv'), index=False)
 y_test.to_csv(os.path.join(PATH_DATASET, 'masks_test.csv'), index=False)
 
-# Test - only fire patches
-x_test_fire.to_csv(os.path.join(PATH_DATASET, 'images_fire_test.csv'), index=False)
-y_test_fire.to_csv(os.path.join(PATH_DATASET, 'images_fire_mask.csv'), index=False)
+# Adding volcanoes to the train and val
 
-# Teste - only volcanoes patches
-x_test_volcano.to_csv(os.path.join(PATH_DATASET, 'images_volcanoes_test.csv'), index=False)
-y_test_volcano.to_csv(os.path.join(PATH_DATASET, 'images_volcanoes_mask.csv'), index=False)
+# Test performed to see how is the performance when added volcanoes to the dataset
+#x_train_volcano, x_temp_volcano, y_train_volcano, y_temp_volcano = train_test_split(df_volcanoes['tiff_file'], df_volcanoes['mask_file'], test_size=0.4)
+#x_val_volcano, x_test_volcano, y_val_volcano, y_test_volcano = train_test_split(x_temp_volcano, y_temp_volcano, test_size=0.5)
+
+# Test - only fire patches
+# x_test_fire.to_csv(os.path.join(PATH_DATASET, 'images_fire_test.csv'), index=False)
+# y_test_fire.to_csv(os.path.join(PATH_DATASET, 'images_fire_mask.csv'), index=False)
+
+# # Teste - only volcanoes patches
+# x_test_volcano.to_csv(os.path.join(PATH_DATASET, 'images_volcanoes_test.csv'), index=False)
+# y_test_volcano.to_csv(os.path.join(PATH_DATASET, 'images_volcanoes_mask.csv'), index=False)

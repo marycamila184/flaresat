@@ -62,15 +62,10 @@ def get_toa_texas_patch(file_path):
     return flagged_pixels
 
 
-def get_patch_cloud_mask(file_path):
-    clear_cloud_mask = get_cloud_mask(file_path)
-    return clear_cloud_mask
-
-
 method_masks = np.array([get_toa_texas_patch(path) for path in images_test['tiff_file']])
 truth_masks = np.array([get_mask_patch(path) for path in masks_test['mask_file']])
 
-cloud_masks = np.array([get_patch_cloud_mask(path) for path in images_test['tiff_file']])
+cloud_masks = np.array([get_cloud_mask(path) for path in images_test['tiff_file']])
  
 y_pred_flat = method_masks.flatten()
 y_test_flat = truth_masks.flatten()
