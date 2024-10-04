@@ -2,7 +2,7 @@ import numpy as np
 import cv2
 import os
 
-def plot_inferences(truth_masks, method_masks, truth_patches, cloud_masks, flaresat_masks, output_path, list_entities_plot, method, n_images=30):
+def plot_inferences(truth_masks, method_masks, truth_patches, flaresat_masks, output_path, list_entities_plot, method, n_images=30, cloud_masks = []):
     for index in range(n_images):
         original_image = truth_patches[index][:, :, 6]
         original_image = cv2.normalize(original_image, None, 0, 255, cv2.NORM_MINMAX)
@@ -14,10 +14,11 @@ def plot_inferences(truth_masks, method_masks, truth_patches, cloud_masks, flare
         truth_mask = cv2.cvtColor(truth_mask.astype(np.uint8), cv2.COLOR_GRAY2BGR)
         cv2.putText(truth_mask, 'Ground Truth Mask', (10, 25), cv2.FONT_HERSHEY_SIMPLEX, 0.3, (255, 255, 255), 1)
 
-        cloud_mask = cloud_masks[index][:, :]
-        cloud_mask = cv2.normalize(cloud_mask, None, 0, 255, cv2.NORM_MINMAX)
-        cloud_mask = cv2.cvtColor(cloud_mask.astype(np.uint8), cv2.COLOR_GRAY2BGR)
-        cv2.putText(cloud_mask, 'Cloud Mask', (10, 25), cv2.FONT_HERSHEY_SIMPLEX, 0.3, (255, 255, 255), 1)
+        if len(cloud_masks) > 0:
+            cloud_mask = cloud_masks[index][:, :]
+            cloud_mask = cv2.normalize(cloud_mask, None, 0, 255, cv2.NORM_MINMAX)
+            cloud_mask = cv2.cvtColor(cloud_mask.astype(np.uint8), cv2.COLOR_GRAY2BGR)
+            cv2.putText(cloud_mask, 'Cloud Mask', (10, 25), cv2.FONT_HERSHEY_SIMPLEX, 0.3, (255, 255, 255), 1)
 
         flaresat_mask = flaresat_masks[index].squeeze()
         flaresat_mask = cv2.normalize(flaresat_mask, None, 0, 255, cv2.NORM_MINMAX)
@@ -33,7 +34,12 @@ def plot_inferences(truth_masks, method_masks, truth_patches, cloud_masks, flare
             text_image += " " + list_entities_plot[index]
         cv2.putText(predicted_mask, str(text_image).upper() + ' Predicted Mask', (10, 25), cv2.FONT_HERSHEY_SIMPLEX, 0.3, (255, 255, 255), 1)
 
-        concatenated_image = np.hstack((original_image, cloud_mask, truth_mask, predicted_mask, flaresat_mask))
+        masks_to_concatenate = [original_image, truth_mask, predicted_mask, flaresat_mask]
+
+        if len(cloud_masks) > 0:
+            masks_to_concatenate.insert(1, cloud_mask)
+
+        concatenated_image = np.hstack(masks_to_concatenate)
 
         file_name = f"inference_{method}_{index}.png"
         save_path = os.path.join(output_path, file_name)

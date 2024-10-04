@@ -43,8 +43,8 @@ import matplotlib.pyplot as plt
 
 #     return mask_scene
 
-# Texas gas flare detection reference - https://www.sciencedirect.com/science/article/pii/S1569843222002631
-def get_toa_texas(mask_cloud, img):
+# TAI gas flare detection reference - https://www.sciencedirect.com/science/article/pii/S1569843222002631
+def get_toa_tai(mask_cloud, img):
     img = img[:, :, [4,5,6]]   
 
     # Reference https://www.sciencedirect.com/science/article/pii/S1569843222002631 and https://www.usgs.gov/faqs/what-are-band-designations-landsat-satellites

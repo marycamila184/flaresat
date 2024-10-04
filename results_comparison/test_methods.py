@@ -8,7 +8,7 @@ from utils.process_scene_toa import *
 OUTPUT_PATH = '/home/marycamila/flaresat/results_comparison/output/'
 PATH_SOURCE = '/home/marycamila/flaresat/results_comparison/source/'
 
-methods = ['nhi', 'texas']
+methods = ['nhi', 'tai']
 
 scenes = pd.read_csv('/home/marycamila/flaresat/results_comparison/source/test_scenes_points.csv', delimiter=';')
 
@@ -23,9 +23,9 @@ for method in methods:
             scene = get_toa_scene(scene_path, 'RADIANCE')
             # processed_scene = get_toa_nhi(scene)
         else:
-            # Texas gas flare detection reference - https://www.sciencedirect.com/science/article/pii/S1569843222002631
+            # TAI gas flare detection reference - https://www.sciencedirect.com/science/article/pii/S1569843222002631
             scene = get_toa_scene(scene_path, 'REFLECTANCE')
-            processed_scene = get_toa_texas(scene)
+            processed_scene = get_toa_tai(scene)
 
         lon, lat = scene_row['lon'], scene_row['lat']
         

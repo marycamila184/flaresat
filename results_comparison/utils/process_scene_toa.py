@@ -93,7 +93,7 @@ def get_toa_patch(file_path, method):
             
             # Hotspot used Radiance - https://ieeexplore.ieee.org/document/10641298
             # NHI used Radiance - https://ieeexplore.ieee.org/document/9681815
-            # Texas used Reflectance - https://www.sciencedirect.com/science/article/pii/S1569843222002631
+            # TAI used Reflectance - https://www.sciencedirect.com/science/article/pii/S1569843222002631
             attribute_mult = method + '_MULT_BAND_' + str(band + 1)
             attribute_add = method + '_ADD_BAND_' + str(band + 1)
             mult_band = float(metadata[attribute_mult])
@@ -101,6 +101,23 @@ def get_toa_patch(file_path, method):
 
             # Conversion to TOA Radiance - https://www.usgs.gov/landsat-missions/using-usgs-landsat-level-1-data-product    
             img[:, :, band] = (img[:, :, band] * mult_band) + add_band
+
+    return img
+
+
+def load_patch(file_path, n_channels, bands=[]):
+    img = tiff.imread(file_path)
+    img = np.resize(img, (256, 256, 10))
+    
+    if n_channels == 10:
+        img = img[:, :, :]
+    else:
+        # Active-fire 
+        img = img[:, :, bands]
+        #img = img[:, :, [1,5,6,4]] # Reference transfer learning
+        #img = img[:, :, [1,5,6]] # Reference active-fire
+        #img = img[:, :, [4,5,6]] # Reference
+        #img = img[:, :, [5,6]]        
 
     return img
 
