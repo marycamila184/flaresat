@@ -99,7 +99,7 @@ def get_toa_patch(file_path, method):
             mult_band = float(metadata[attribute_mult])
             add_band = float(metadata[attribute_add])
 
-            # Conversion to TOA Radiance - https://www.usgs.gov/landsat-missions/using-usgs-landsat-level-1-data-product    
+            # Conversion to TOA Radiance or Reflectance - https://www.usgs.gov/landsat-missions/using-usgs-landsat-level-1-data-product    
             img[:, :, band] = (img[:, :, band] * mult_band) + add_band
 
     return img
