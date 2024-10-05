@@ -231,12 +231,12 @@ def plot_histogram_all(list_hist_flare, list_hist_fire, list_hist_volcanoes, met
     plt.figure(figsize=(10, 6))
 
     # Plot each histogram with different colors and add a label for the legend
-    sns.histplot(list_hist_fire, bins=50, color='orange', edgecolor='black', kde=True, label='Fire')
-    sns.histplot(list_hist_flare, bins=50, color='red', edgecolor='black', kde=True, label='Flare')
-    sns.histplot(list_hist_volcanoes, bins=50, color='blue', edgecolor='black', kde=True, label='Volcanoes')
+    sns.histplot(list_hist_fire, bins=50, color='orange', edgecolor='black', kde=True, label='Fire', stat='density')
+    sns.histplot(list_hist_flare, bins=50, color='red', edgecolor='black', kde=True, label='Flare', stat='density')
+    sns.histplot(list_hist_volcanoes, bins=50, color='blue', edgecolor='black', kde=True, label='Volcanoes', stat='density')
 
     # Add the title and labels
-    plt.title("Average Pixel Temperature Histogram")
+    plt.title("Normalized B10 Pixel Temperature Histogram")
     plt.xlabel('Temperature (K)')
     plt.ylabel('Pixel Count')
     plt.grid(True)
