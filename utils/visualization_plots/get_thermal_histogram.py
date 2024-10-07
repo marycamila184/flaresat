@@ -102,10 +102,6 @@ def get_patch_kelvin(file_path, tiff_b10, mask):
     radiance = np.where(img == 0, 1e-10, img)  # Avoid division by zero
     bt_kelvin = k2_band / np.log((k1_band / radiance) + 1)  # Calculate brightness temperature in Kelvin
 
-    # Transformar a mascara para os quadrados 
-    # Pegar as coordenadas para a caixa
-    # Pegar o pixel central para preencher o blob
-
     bt_kelvin_masked = np.where(mask == 1, bt_kelvin, 0)  # Keep the temperature in Kelvin
 
     return bt_kelvin_masked
@@ -300,11 +296,6 @@ for index, path in enumerate(images_test):
             hist_pixels_fire.append(seg_pixels)
         else:
             hist_pixels_volcanoes.append(seg_pixels)
-
-
-# plot_histogram(hist_avg_flare, 'flare', 'average')
-# plot_histogram(hist_avg_fire, 'fire', 'average')
-# plot_histogram(hist_avg_volcanoes, 'volcanoes', 'average')
 
 all_flare_pixels = np.concatenate(hist_pixels_flare)
 all_fire_pixels = np.concatenate(hist_pixels_fire)

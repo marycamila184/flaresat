@@ -89,18 +89,16 @@ def get_toa_patch(file_path, method):
         len_bands = 8
     
     for band in range(0, len_bands):
-        if band != 7: # Band 8 not used as it has a different resolution
-            
-            # Hotspot used Radiance - https://ieeexplore.ieee.org/document/10641298
-            # NHI used Radiance - https://ieeexplore.ieee.org/document/9681815
-            # TAI used Reflectance - https://www.sciencedirect.com/science/article/pii/S1569843222002631
-            attribute_mult = method + '_MULT_BAND_' + str(band + 1)
-            attribute_add = method + '_ADD_BAND_' + str(band + 1)
-            mult_band = float(metadata[attribute_mult])
-            add_band = float(metadata[attribute_add])
+        # Hotspot used Radiance - https://ieeexplore.ieee.org/document/10641298
+        # NHI used Radiance - https://ieeexplore.ieee.org/document/9681815
+        # TAI used Reflectance - https://www.sciencedirect.com/science/article/pii/S1569843222002631
+        attribute_mult = method + '_MULT_BAND_' + str(band + 1)
+        attribute_add = method + '_ADD_BAND_' + str(band + 1)
+        mult_band = float(metadata[attribute_mult])
+        add_band = float(metadata[attribute_add])
 
-            # Conversion to TOA Radiance or Reflectance - https://www.usgs.gov/landsat-missions/using-usgs-landsat-level-1-data-product    
-            img[:, :, band] = (img[:, :, band] * mult_band) + add_band
+        # Conversion to TOA Radiance or Reflectance - https://www.usgs.gov/landsat-missions/using-usgs-landsat-level-1-data-product    
+        img[:, :, band] = (img[:, :, band] * mult_band) + add_band
 
     return img
 

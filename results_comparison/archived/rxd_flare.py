@@ -14,7 +14,6 @@ import cv2
 OUTPUT_PATH = '/home/marycamila/flaresat/results_comparison/rxd_output'
 THRESHOLD = 0.05 # Reference https://www.mdpi.com/2071-1050/15/6/5333 - 4.2. Anomaly Detection
 N_CHANNELS = 2
-PATH_MTL = '/media/marycamila/Expansion/raw/2019'
 PATH_METADATA = '/media/marycamila/Expansion/raw/active_fire/metadata'
 PATCH_SIZE = 256
 
