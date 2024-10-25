@@ -1,3 +1,4 @@
+import math
 import tifffile as tiff
 from shapely.geometry import box
 from PIL import Image, ImageDraw
@@ -5,11 +6,11 @@ import pandas as pd
 import numpy as np
 
 YEAR = "2019"
-MONTH = "03"
+MONTH = "12"
 
 PATH_FIRE = "/home/marycamila/flaresat/fire_mask/fire_images/" + YEAR + "/" + MONTH
 PATH_CSV = "/home/marycamila/flaresat/source/landsat_scenes"
-HALF_SIZE_SQUARE = 35
+
 
 def draw_square_mask(df_points_fire, entity):
     df_points_fire = df_points_fire[df_points_fire["entity_id_sat"] == entity]
@@ -25,7 +26,6 @@ def draw_square_mask(df_points_fire, entity):
             path = f"{PATH_FIRE}/{prefix}_mask.tiff"
 
             image = tiff.imread(path)
-
             image = np.resize(image, (256, 256, 1))
 
             image_pil = Image.fromarray(image[:, :, 0])
@@ -33,22 +33,21 @@ def draw_square_mask(df_points_fire, entity):
 
             df_points_flter = df_points_fire[(df_points_fire["row_index"] == row_index) & (df_points_fire["col_index"] == col_index)]
 
-            squares = []
             for j, item in df_points_flter.iterrows():
                 center_x = item.col - (256 * item.col_index)
                 center_y = item.row - (256 * item.row_index)
 
-                window_size_add = int((item["point_area"] * 2) / 30)
+                window_size_add = int((math.sqrt(item.point_ellip * 1_000_000) / 2) / 30) + 5 # 5 pixels added just as borders
 
-                square = box(center_x - (HALF_SIZE_SQUARE + window_size_add), 
-                             center_y - (HALF_SIZE_SQUARE + window_size_add), 
-                             center_x + (HALF_SIZE_SQUARE + window_size_add), 
-                             center_y + (HALF_SIZE_SQUARE + window_size_add))
+                square = box(center_x - (window_size_add), 
+                             center_y - (window_size_add), 
+                             center_x + (window_size_add), 
+                             center_y + (window_size_add))
 
                 minx, miny, maxx, maxy = square.bounds
                 draw.rectangle([minx, miny, maxx, maxy], outline=255, width=1)
 
-            prefix += "_square.tif"
+            prefix += "_square.png"
             image_np = np.array(image_pil)
             tiff.imwrite(f"{PATH_FIRE}/{prefix}", image_np)
 

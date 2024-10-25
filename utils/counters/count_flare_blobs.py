@@ -6,7 +6,7 @@ import os
 
 PATH_DATASET = '/home/marycamila/flaresat/dataset'
 
-df_test_mask = pd.read_csv(os.path.join(PATH_DATASET, 'masks_val.csv'))["mask_file"]
+df_test_mask = pd.read_csv(os.path.join(PATH_DATASET, 'masks_train.csv'))["mask_file"]
 
 total_blob_count = 0
 

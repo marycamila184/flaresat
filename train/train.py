@@ -25,12 +25,13 @@ if gpus:
         print(e)
 
 CHECKPOINT_MODEL_NAME = 'flaresat.hdf5'
-EPOCHS = 200
+EPOCHS = 150
 
 IMAGE_SIZE = (256, 256)
 
-N_CHANNELS = 10
-BANDS = []
+N_CHANNELS = 3
+BANDS = [3,5,6]
+DICT_CHANNELS = (3,5,6)
 BATCH_SIZE = 16
 
 RANDOM_STATE = 42
@@ -63,7 +64,8 @@ val_generator = ImageMaskGenerator(
 
 #model = unet_model(input_size=(IMAGE_SIZE[0], IMAGE_SIZE[1], N_CHANNELS))
 model = unet_attention_model(input_size=(IMAGE_SIZE[0], IMAGE_SIZE[1], N_CHANNELS))
-#model = unet_sentinel_landcover(input_size=(IMAGE_SIZE[0], IMAGE_SIZE[1], N_CHANNELS))
+#model = unet_sentinel_landcover(input_size=(IMAGE_SIZE[0], IMAGE_SIZE[1], N_CHANNELS), add_attention=False, dict_channels=DICT_CHANNELS)
+#model = unet_sentinel_landcover(input_size=(IMAGE_SIZE[0], IMAGE_SIZE[1], N_CHANNELS), add_attention=True, dict_channels=DICT_CHANNELS)
 model.summary()
 
 model_view = os.path.join(OUTPUT_DIR, "model_architecture.png")

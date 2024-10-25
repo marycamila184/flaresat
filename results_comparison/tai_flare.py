@@ -28,9 +28,8 @@ THRESHOLD = 0.50
 
 OUTPUT_PATH = '/home/marycamila/flaresat/results_comparison/output/tai'
 
-images_test = pd.read_csv('/home/marycamila/flaresat/dataset/images_test.csv')
-masks_test = pd.read_csv('/home/marycamila/flaresat/dataset/masks_test.csv')
-
+images_test = pd.read_csv('/home/marycamila/flaresat/dataset/comparison/images_test_fire.csv')
+masks_test = pd.read_csv('/home/marycamila/flaresat/dataset/comparison/masks_test_fire.csv')
 
 cloud_masks = []
 
@@ -54,13 +53,13 @@ y_test_flat = truth_masks.flatten()
 get_metrics_results(y_pred_flat,y_test_flat)
 
 #Getting flaresat output
-truth_patches = np.array([load_patch(path, n_channels=N_CHANNELS) for path in images_test['tiff_file']])
+# truth_patches = np.array([load_patch(path, n_channels=N_CHANNELS) for path in images_test['tiff_file']])
 
-model_path = os.path.join(OUTPUT_DIR, MODEL_FILE_NAME)
-model = tf.keras.models.load_model(model_path)
+# model_path = os.path.join(OUTPUT_DIR, MODEL_FILE_NAME)
+# model = tf.keras.models.load_model(model_path)
 
-y_pred = model.predict(truth_patches)
-y_pred_thresholded = np.where(y_pred > THRESHOLD, 1, 0)
-flaresat_output = (y_pred_thresholded * 255).astype(np.uint8)
+# y_pred = model.predict(truth_patches)
+# y_pred_thresholded = np.where(y_pred > THRESHOLD, 1, 0)
+# flaresat_output = (y_pred_thresholded * 255).astype(np.uint8)
 
-plot_inferences(truth_masks, method_masks, truth_patches, flaresat_output, OUTPUT_PATH, list_entities_plot=[], method="tai", n_images=len(truth_masks), cloud_masks=cloud_masks)
+# plot_inferences(truth_masks, method_masks, truth_patches, flaresat_output, OUTPUT_PATH, list_entities_plot=[], method="tai", n_images=len(truth_masks), cloud_masks=cloud_masks)

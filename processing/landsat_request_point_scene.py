@@ -5,6 +5,9 @@ import requests
 import threading
 import pandas as pd
 import requests
+import logging
+
+logging.basicConfig(level=logging.INFO)
 
 pd.set_option("display.max_rows", 500)
 pd.set_option("display.max_columns", 500)
@@ -16,108 +19,125 @@ DATASET_LANDSAT = "landsat_ot_c2_l1"
 CLOUD_COVER = 10
 
 years = ["2019"]
+months = ["12"]
 list_df_images = []
+path_csv = "/home/marycamila/flaresat/source/csv_points/gas_flaring_points.csv"
+df = pd.read_csv(path_csv, low_memory=False)
 
-# Function to make requests
-def make_request(item, token, year, month_str):
+
+def make_request(item, token, year, month_str, timeout=10):
     try:
-        if item.queue:
-            headers = {"X-Auth-Token": token}
+        headers = {"X-Auth-Token": token}
 
-            last_day_month = calendar.monthrange(int(year), int(month_str))[1]
+        # Get the last day of the month
+        last_day_month = calendar.monthrange(int(year), int(month_str))[1]
+        init_date = f"{year}-{month_str}-01"
+        end_date = f"{year}-{month_str}-{last_day_month:02d}"
 
-            init_date = year + "-" + month_str + "-01"
-            end_date = year + "-" + month_str + "-" + str(last_day_month)
-
-            latitude = item.Latitude
-            longitude = item.Longitude
-
-            body = {
-                "datasetName": DATASET_LANDSAT,
-                "sceneFilter": {
-                    "acquisitionFilter": {"start": init_date, "end": end_date},
-                    "spatialFilter": {
-                        "filterType": "geojson",
-                        "geoJson": {
-                            "type": "Point",
-                            "coordinates": [longitude, latitude],
-                        },
+        # Create request body
+        body = {
+            "datasetName": DATASET_LANDSAT,
+            "sceneFilter": {
+                "acquisitionFilter": {"start": init_date, "end": end_date},
+                "spatialFilter": {
+                    "filterType": "geojson",
+                    "geoJson": {
+                        "type": "Point",
+                        "coordinates": [item.longitude, item.latitude],
                     },
-                    "cloudCoverFilter": {
-                        "max": 10,
-                        "min": 0,
-                        "includeUnknown": "true"
-                    }
                 },
-            }
+                "cloudCoverFilter": {
+                    "max": 15,
+                    "min": 0,
+                    "includeUnknown": False
+                }
+            },
+        }
 
-            r = requests.post(URL_SCENE_SEARCH, json=body, headers=headers)
+        # Make POST request with timeout
+        r = requests.post(URL_SCENE_SEARCH, json=body, headers=headers, timeout=timeout)
 
-            list_results = r.json()["data"]["results"]
+        df.loc[df["id_number"] == item.id_number, "queue"] = False
 
-            # Remove from queue if the API response is 200
-            df.at[item.id, "queue"] = False
+        # Check if the response is successful
+        if r.status_code == 200:
+            data = r.json()
 
-            if len(list_results) > 0:
-                print(str(len(list_results)) + " scenes found for year: " + year +" - month: " + month_str + " - id: " + str(item.id))
-               
-                list_data = []
+            # Ensure "data" and "results" exist
+            if "data" in data and "results" in data["data"]:
+                list_results = data["data"]["results"]
 
-                for element in list_results:
-                    data = {
-                        "cloud_sat": element["cloudCover"],
-                        "entity_id_sat": element["entityId"],
-                        "start_date_sat": element["temporalCoverage"]["startDate"],
-                        "end_date_sat": element["temporalCoverage"]["endDate"],
-                    }
+                if len(list_results) > 0:
+                    logging.info(f"{len(list_results)} scenes found for year: {year} - month: {month_str} - id: {item.id_number}")
 
-                    list_data.append(data)
+                    list_data = []
+                    for element in list_results:
+                        # Check if necessary fields are present in the response
+                        cloud_cover = element.get("cloudCover", None)
+                        entity_id = element.get("entityId", None)
+                        temporal_coverage = element.get("temporalCoverage", {})
 
-                results = pd.DataFrame(list_data)
+                        start_date = temporal_coverage.get("startDate", None)
+                        end_date = temporal_coverage.get("endDate", None)
 
-                results["point_id"] = item.id
-                results["point_latitude"] = latitude
-                results["point_longitude"] = longitude
-                results["point_temp"] = item.Temperature
-                results["point_rh"] = item.RadiativeHeat
-                results["point_freq"] = item.Frequency
-                results["point_area"] = item.Area
-                results["point_bcm"] = item.BCM
-                results["point_type"] = item.Type                
-                results["available_sat"] = True
+                        data = {
+                            "cloud_sat": cloud_cover,
+                            "entity_id_sat": entity_id,
+                            "start_date_sat": start_date,
+                            "end_date_sat": end_date,
+                        }
 
-                list_df_images.append(results)
+                        list_data.append(data)
 
+                    results = pd.DataFrame(list_data)
+
+                    # Add additional item information
+                    results["point_id_number"] = item.id_number
+                    results["point_latitude"] = item.latitude
+                    results["point_longitude"] = item.longitude
+                    results["point_temp"] = item.avg_temp
+                    results["point_freq"] = item.dtc_freq
+                    results["point_ellip"] = item.ellip
+                    results["point_flr_volume"] = item.flr_volume
+                    results["point_type"] = item.flr_type                
+                    results["available_sat"] = True
+
+                    list_df_images.append(results)
+
+                else:
+                    logging.info(f"No scene found for year: {year} - month: {month_str} - id: {item.id_number}")
             else:
-                print("No scene found for year: " + year +" - month: " + month_str + " - id: " + str(item.id))
-    except Exception as e:
-        print("Error for " + str(item.id))
-        df.at[item.id, "queue"] = True
-        print(e)
+                logging.error("Unexpected response format: 'data' or 'results' not found")
+        else:
+            df.loc[df["id_number"] == item.id_number, "queue"] = True
+            df.to_csv(path_csv, index=False)
+            logging.error(f"Failed request with status code {r.status_code} for id {item.id_number}")
 
+    except requests.Timeout:
+        df.loc[df["id_number"] == item.id_number, "queue"] = True
+        logging.error(f"Request timeout for id {item.id_number}")
+        df.to_csv(path_csv, index=False)
+    except requests.RequestException as e:
+        df.loc[df["id_number"] == item.id_number, "queue"] = True
+        logging.error(f"Request failed for id {item.id_number}: {e}")
+        df.to_csv(path_csv, index=False)
+    except Exception as e:
+        df.loc[df["id_number"] == item.id_number, "queue"] = True
+        logging.error(f"Error processing request for id {item.id_number}: {e}")
+        df.to_csv(path_csv, index=False)    
+    
 
 for year in years:
-    path_csv = "/home/marycamila/flaresat/source/csv_points/gas_flaring_points.csv"
-
-    months = [12]
-    for month in months:
-            month_str = f"{month:02d}"
-
+    for month_str in months:
             try:
-                df = pd.read_csv(path_csv, low_memory=False)
-                
-                # Reset index and rename the index column
-                df.reset_index(inplace=True)
-                df.rename(columns={"index": "id"}, inplace=True)
-
-                # List to store threads
                 threads = []
-                 # Get initial tokens and their login times
                 auth_login_time1, token1 = utils.landsat_auth.return_token()
                 auth_login_time2, token2 = utils.landsat_auth.return_token()
 
                 # Create threads for each request
-                for index, row in df.iterrows():
+                df_filtered = df[df["queue"]]
+
+                for index, row in df_filtered.iterrows():
                     diff_auth1 = datetime.now() - auth_login_time1
                     diff_auth2 = datetime.now() - auth_login_time2
                       
@@ -146,7 +166,7 @@ for year in years:
 
                     if len(list_df_images) > 0:
                         df_images = pd.concat(list_df_images, ignore_index=True)
-                        df_images.to_csv("/home/marycamila/flaresat/source/landsat_scenes/"+ str(year)+ "/scenes_"+ month_str+ "_.csv",index=False)
+                        df_images.to_csv("/home/marycamila/flaresat/source/landsat_scenes/"+ str(year)+ "/scenes/scenes_"+ month_str+ "_.csv",index=False)
 
             except Exception as e:
                 print(e)

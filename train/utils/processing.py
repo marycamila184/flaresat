@@ -13,7 +13,9 @@ def load_image(file_path, n_channels, target_size=None, bands=[]):
         img = img[:, :, bands]
         #img = img[:, :, [1,5,6,4]] # Reference transfer learning
         #img = img[:, :, [1,5,6]] # Reference active-fire
-        #img = img[:, :, [4,5,6]] # Reference
+        #img = img[:, :, [4,5,6]] # Reference flare
+        #img = img[:, :, [3,5,6]] # Reference flare
+        #img = img[:, :, [3,4,5,6]] # Reference flare
         #img = img[:, :, [5,6]]        
     
     if target_size:

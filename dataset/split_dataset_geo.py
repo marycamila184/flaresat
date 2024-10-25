@@ -17,11 +17,14 @@ PATH_FIRE_MASKS = '/home/marycamila/flaresat/dataset/fire_mask_patches'
 PATH_VOLCANOES_PATCHES = '/home/marycamila/flaresat/dataset/volcanoes_patches'
 PATH_VOLCANOES_MASKS = '/home/marycamila/flaresat/dataset/volcanoes_mask_patches'
 
+PATH_URBAN_PATCHES = '/home/marycamila/flaresat/dataset/urban_areas_patches'
+PATH_URBAN_MASKS = '/home/marycamila/flaresat/dataset/urban_areas_mask_patches'
+
 PATH_CSV_ACTIVE_FIRE = '/home/marycamila/flaresat/source/landsat_scenes/2019/active_fire'
 PATH_CSV_POINTS = '/home/marycamila/flaresat/source/csv_points/gas_flaring_points.csv'
 
-TRAIN_RATIO = 0.80
-TEST_RATIO = 0.20
+TRAIN_RATIO = 0.70
+TEST_RATIO = 0.30
 RANDOM_STATE = 123
 np.random.seed(RANDOM_STATE)
 
@@ -45,7 +48,7 @@ def get_countries():
         mask = df_scenes.apply(lambda row: [row['entity_id_sat'], row['row_index'], row['col_index']] in entity_row_col, axis=1)
         df_scenes = df_scenes[mask]
 
-        unique_pairs = df_scenes[['entity_id_sat', 'row_index', 'col_index', 'point_id']].drop_duplicates()
+        unique_pairs = df_scenes[['entity_id_sat', 'row_index', 'col_index', 'point_id_number']].drop_duplicates()
         list_fire_patches.append(unique_pairs)
 
     df_flares = pd.concat(list_fire_patches, ignore_index=True)
@@ -53,24 +56,23 @@ def get_countries():
     df_countries = pd.read_csv(PATH_CSV_POINTS)
     df_countries.reset_index(inplace=True)
 
-    df_flare_countries = df_flares.merge(df_countries, how='inner', left_on='point_id', right_on=df_countries.index)
-    df_flare_countries = df_flare_countries[['Country', 'Type', 'Latitude','Longitude','point_id', 'entity_id_sat', 'row_index', 'col_index']]
+    df_flare_countries = df_flares.merge(df_countries, how='inner', left_on='point_id_number', right_on=df_countries.index)
+    df_flare_countries = df_flare_countries[['cntry_name', 'flr_type', 'latitude','longitude','point_id_number', 'entity_id_sat', 'row_index', 'col_index']]
 
     return df_flare_countries
-
 
 list_patches = os.listdir(PATH_FLARE_PATCHES)
 df = get_countries()
 
-grouped = df.groupby(['Country', 'Latitude','Longitude', 'row_index', 'col_index']).size().reset_index(name='count')
+grouped = df.groupby(['cntry_name', 'latitude','longitude', 'row_index', 'col_index']).size().reset_index(name='count')
 len_test = int(len(list_patches) * TEST_RATIO)
 
-# Test dataset will have patches which are unique ('Latitude','Longitude', 'row_index', 'col_index') frequency == 1
+# Test dataset will have patches which are unique ('latitude','longitude', 'row_index', 'col_index') frequency == 1
 test_group = grouped[grouped["count"] == 1]
 test_group = test_group.sample(n=len_test)
 
-mask = df.set_index(['Country', 'Latitude', 'Longitude', 'row_index', 'col_index']).index.isin(
-    test_group.set_index(['Country', 'Latitude', 'Longitude', 'row_index', 'col_index']).index
+mask = df.set_index(['cntry_name', 'latitude', 'longitude', 'row_index', 'col_index']).index.isin(
+    test_group.set_index(['cntry_name', 'latitude', 'longitude', 'row_index', 'col_index']).index
 )
 
 # Unique patches for test dataset
@@ -91,9 +93,9 @@ df_test_patches = df_test_patches[["entity_id_sat", "row_index", "col_index"]].c
 # ---- TEST PATCHES
 
 # Test list image for future comparison.
-#list_test_images = df_test_patches["entity_id_sat"].unique()
-#df_test_images = pd.DataFrame(list_test_images, columns=["entity_id_test"])
-#df_test_images.to_csv(os.path.join(PATH_DATASET, 'entity_id_test.csv'), index=False)
+# list_test_images = df_test_patches["entity_id_sat"].unique()
+# df_test_images = pd.DataFrame(list_test_images, columns=["entity_id_test"])
+# df_test_images.to_csv(os.path.join(PATH_DATASET, 'entity_id_test.csv'), index=False)
 
 df_test_patches["tiff_file"] = "fire_" + df_test_patches["entity_id_sat"] + "_" + df_test_patches["row_index"] + "_" + df_test_patches["col_index"] + "_patch.tiff"
 df_test_patches["mask_file"] = "fire_" + df_test_patches["entity_id_sat"] + "_" + df_test_patches["row_index"] + "_" + df_test_patches["col_index"] + "_mask.tiff"
@@ -139,6 +141,7 @@ x_val_fire, x_test_fire, y_val_fire, y_test_fire = train_test_split(x_temp_fire,
 
 list_volcanoes_patches = os.listdir(PATH_VOLCANOES_PATCHES)
 list_volcanoes = []
+
 for patch_volcano in list_volcanoes_patches:
     path = os.path.join(PATH_VOLCANOES_PATCHES, patch_volcano)
     mask_filename = patch_volcano.replace("patch.tiff", "mask.tiff")
@@ -150,6 +153,27 @@ df_volcanoes = pd.DataFrame(list_volcanoes)
 x_test_volcano = df_volcanoes[['tiff_file']]
 y_test_volcano = df_volcanoes[['mask_file']]
 
+# ---- URBAN AREAS DATASET
+
+# ler o df das cenas com os pontos 
+# agrupar por cidade
+# pegar a lista e fazer um split pensando no numero final de imagens
+# split de treino, validacao e teste
+
+list_urban_patches = os.listdir(PATH_URBAN_PATCHES)
+list_urban = []
+
+for patch_urban in list_urban_patches:
+    path = os.path.join(PATH_URBAN_PATCHES, patch_urban)
+    mask_filename = patch_urban.replace("patch.tiff", "mask.tiff")
+    mask = os.path.join(PATH_URBAN_MASKS, mask_filename)
+    new_row = {"tiff_file": path, "mask_file": mask}
+    list_urban.append(new_row)
+
+df_urban_areas = pd.DataFrame(list_urban)
+x_test_urban = df_urban_areas[['tiff_file']]
+y_test_urban = df_urban_areas[['mask_file']]
+
 # ---- MERGE FLARE, FIRE AND VOLCANOES DATASETS
 
 x_train = pd.concat([x_train, x_train_fire])
@@ -158,8 +182,8 @@ y_train = pd.concat([y_train, y_train_fire])
 x_val = pd.concat([x_val, x_val_fire])
 y_val = pd.concat([y_val, y_val_fire])
 
-x_test = pd.concat([x_test, x_test_fire, x_test_volcano])
-y_test = pd.concat([y_test, y_test_fire, y_test_volcano])
+x_test = pd.concat([x_test, x_test_fire, x_test_volcano, x_test_urban])
+y_test = pd.concat([y_test, y_test_fire, y_test_volcano, y_test_urban])
 
 x_train.to_csv(os.path.join(PATH_DATASET, 'images_train.csv'), index=False)
 y_train.to_csv(os.path.join(PATH_DATASET, 'masks_train.csv'), index=False)

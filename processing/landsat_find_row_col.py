@@ -13,7 +13,7 @@ PATH_CSV = "/home/marycamila/flaresat/source/landsat_scenes"
 PATCH_SIZE = 256
 
 YEAR = "2019"
-MONTH = "03"
+MONTH = "12"
 
 def get_row_col(long, lat, path):
     ds = gdal.Open(path, gdal.GA_ReadOnly)
@@ -50,6 +50,10 @@ def calculate_patch_index(row, col):
 def create_queue_csv():
     # Setting the original dataset to use q queue
     df_points = pd.read_csv(PATH_CSV + "/" + YEAR + "/scenes/scenes_" + MONTH + ".csv")
+    
+    # Some entities have only OLI bandas, and they will be removed (22 scenes)
+    df_points = df_points[~df_points["entity_id_sat"].str.contains("LO")]
+    
     df_points["row"] = 0
     df_points["col"] = 0
     df_points["col_index"] = 0

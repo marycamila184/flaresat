@@ -15,7 +15,7 @@ import pandas as pd
 gdal.UseExceptions()
 
 YEAR = "2019"
-MONTH = "03"
+MONTH = "12"
 
 TH_FIRE = 0.25
 PATH_FIRE = "/home/marycamila/flaresat/fire_mask/fire_images/" + YEAR + "/" + MONTH
@@ -24,7 +24,7 @@ PATH_CSV = "/home/marycamila/flaresat/source/landsat_scenes"
 CUDA_DEVICE = 0
 PATCH_SIZE = 256
 MAX_PIXEL_VALUE = 65535
-CHANNELS = 10
+CHANNELS = 3
 
 os.environ["CUDA_VISIBLE_DEVICES"] = str(CUDA_DEVICE)
 
@@ -68,7 +68,7 @@ def conv2d_block(input_tensor, n_filters, kernel_size=3, batchnorm=True):
     return x
 
 
-def get_unet(input_height=256, input_width=256, n_filters=64, dropout=0.1, batchnorm=True, n_channels=CHANNELS):
+def get_unet(input_height=256, input_width=256, n_filters=16, dropout=0.1, batchnorm=True, n_channels=CHANNELS):
     input_img = Input(shape=(input_height, input_width, n_channels))
 
     # contracting path
@@ -185,9 +185,9 @@ def main():
 
         for entity in df_entity.itertuples():
             patch_img = get_patch_tiff(entity.row_index, entity.col_index, img)
-
+            
             if CHANNELS == 3:
-                inference_patch = patch_img[:,:,[6, 5, 1]]
+                inference_patch = patch_img[:,:,[6,5,1]]
             else:
                 inference_patch = patch_img
 

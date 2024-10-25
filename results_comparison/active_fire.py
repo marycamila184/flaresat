@@ -32,12 +32,11 @@ WEIGHTS_ACTIVE_FIRE_PATH = '/home/marycamila/flaresat/results_comparison/source/
 THRESHOLD_ACTIVE_FIRE = 0.25
 
 #Flaresat
-
 MODEL_PATH = '/home/marycamila/flaresat/train/train_output/transfer_learning/flaresat-10c-16bs-32f-3lr.hdf5'
 THRESHOLD_FLARESAT = 0.50
 
-images_test = pd.read_csv('/home/marycamila/flaresat/dataset/images_test.csv')
-masks_test = pd.read_csv('/home/marycamila/flaresat/dataset/masks_test.csv')
+images_test = pd.read_csv('/home/marycamila/flaresat/dataset/comparison/images_test_flare.csv')
+masks_test = pd.read_csv('/home/marycamila/flaresat/dataset/comparison/masks_test_flare.csv')
 
 
 def conv2d_block(input_tensor, n_filters, kernel_size=3, batchnorm=True):
@@ -136,10 +135,10 @@ get_metrics_results(y_pred_flat, y_test_flat)
 
 #Flaresat Model
 
-model = tf.keras.models.load_model(MODEL_PATH)
+# model = tf.keras.models.load_model(MODEL_PATH)
 
-y_pred = model.predict(truth_patches)
-y_pred_thresholded = np.where(y_pred > THRESHOLD_FLARESAT, 1, 0)
-flaresat_output = (y_pred_thresholded * 255).astype(np.uint8)
+#y_pred = model.predict(truth_patches)
+#y_pred_thresholded = np.where(y_pred > THRESHOLD_FLARESAT, 1, 0)
+#flaresat_output = (y_pred_thresholded * 255).astype(np.uint8)
 
-plot_inferences(truth_masks, method_masks_binary, truth_patches, flaresat_output, OUTPUT_PATH, list_entities_plot=[], method="af", n_images=len(truth_masks), cloud_masks=[])
+#plot_inferences(truth_masks, method_masks_binary, truth_patches, flaresat_output, OUTPUT_PATH, list_entities_plot=[], method="af", n_images=len(truth_masks), cloud_masks=[])
