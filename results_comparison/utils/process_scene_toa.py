@@ -16,8 +16,10 @@ import re
 
 MAX_PIXEL_VALUE = 65535
 PATH_MTL_SCENE = '/media/marycamila/Expansion/raw/2019'
-PATH_SSD_SCENE = '/media/marycamila/KINGSTON/raw'
+
 PATH_MTL_VOLCANOES = '/media/marycamila/Expansion/raw/volcanoes'
+PATH_MTL_URBAN = '/media/marycamila/Expansion/raw/urban_areas'
+
 PATH_MTL_FIRE = '/media/marycamila/Expansion/raw/active_fire/metadata'
 PATH_SCENE_FIRE = '/media/marycamila/Expansion/raw/active_fire/scenes'
 PATCH_SIZE = 256
@@ -50,19 +52,18 @@ def get_mask_patch(file_path):
 # -------------------- PATCH Preprocessing 
 
 def check_metadata_filepath(file_path):
-    if 'flare_patches' in file_path or 'volcano' in file_path:
+    if 'flare_patches' in file_path or 'volcano' in file_path or 'urban' in file_path:
         entity_id = file_path.split('_')[2]
 
-        try:
-            if 'flare_patches' in file_path:
-                path = os.path.join(PATH_MTL_SCENE, entity_id)
-            else:
-                path = os.path.join(PATH_MTL_VOLCANOES, entity_id)
+        if 'flare_patches' in file_path:
+            path = os.path.join(PATH_MTL_SCENE, entity_id)
+        elif 'volcano' in file_path:
+            path = os.path.join(PATH_MTL_VOLCANOES, entity_id)
+        else:
+            entity_id = file_path.split('_')[3]
+            path = os.path.join(PATH_MTL_URBAN, entity_id)
             
-            metadata_file = glob.glob(os.path.join(path, '*_MTL.txt'))[0]     
-        except:
-            path = os.path.join(PATH_SSD_SCENE, entity_id)
-            metadata_file = glob.glob(os.path.join(path, '*_MTL.txt'))[0]    
+        metadata_file = glob.glob(os.path.join(path, '*_MTL.txt'))[0]
    
     else:
         # In case of fire patches
@@ -205,24 +206,26 @@ def get_row_col_from_index(scene_cloud_mask, patch_index):
 
 
 def get_cloud_mask(file_path):
-    if 'flare_patches' in file_path or 'volcano' in file_path:
+    if 'flare_patches' in file_path or 'volcano' in file_path or 'urban' in file_path:
         entity_id = file_path.split('_')[2]      
 
-        try:
-            if 'flare_patches' in file_path:
-                path = os.path.join(PATH_MTL_SCENE, entity_id)
-            else:
-                path = os.path.join(PATH_MTL_VOLCANOES, entity_id)
+        if 'flare_patches' in file_path:
+            path = os.path.join(PATH_MTL_SCENE, entity_id)
+        elif 'volcano' in file_path:
+            path = os.path.join(PATH_MTL_VOLCANOES, entity_id)
+        else:
+            entity_id = file_path.split('_')[3]
+            path = os.path.join(PATH_MTL_URBAN, entity_id)
             
-            qa_band_path = glob.glob(os.path.join(path, '*_QA_PIXEL.TIF'))[0]
-        except:
-            path = os.path.join(PATH_SSD_SCENE, entity_id)
-            qa_band_path = glob.glob(os.path.join(path, '*_QA_PIXEL.TIF'))[0]
-        finally:
-            file_parts = file_path.split('_')
+        qa_band_path = glob.glob(os.path.join(path, '*_QA_PIXEL.TIF'))[0]
+        file_parts = file_path.split('_')        
+
+        if 'urban' in file_path:
+            row, col = int(file_parts[4]), int(file_parts[5])
+        else:
             row, col = int(file_parts[3]), int(file_parts[4])
             
-            scene_cloud_mask = tiff.imread(qa_band_path)
+        scene_cloud_mask = tiff.imread(qa_band_path)
     else:
         # In case of fire patches
         scene_id = file_path.split('/')[6]

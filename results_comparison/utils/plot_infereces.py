@@ -2,9 +2,9 @@ import numpy as np
 import cv2
 import os
 
-def plot_inferences(truth_masks, method_masks, truth_patches, flaresat_masks, output_path, list_entities_plot, method, n_images=30, cloud_masks = []):
+def plot_inferences(truth_masks, method_masks, truth_patches, flaresat_masks, output_path, band_plot, list_entities_plot, method, n_images=30, cloud_masks = []):
     for index in range(n_images):
-        original_image = truth_patches[index][:, :, 6]
+        original_image = truth_patches[index][:, :, band_plot]
         original_image = cv2.normalize(original_image, None, 0, 255, cv2.NORM_MINMAX)
         original_image = cv2.cvtColor(original_image.astype(np.uint8), cv2.COLOR_GRAY2BGR)
         cv2.putText(original_image, 'B7 Landsat', (10, 25), cv2.FONT_HERSHEY_SIMPLEX, 0.3, (255, 255, 255), 1)

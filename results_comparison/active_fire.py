@@ -25,18 +25,22 @@ try:
 except:
     pass
 
-N_CHANNELS = 10
+N_CHANNELS_ACTIVE_FIRE = 3
+BANDS_ACTIVE_FIRE = [6,5,1]
 OUTPUT_PATH = '/home/marycamila/flaresat/results_comparison/output/active_fire'
 
-WEIGHTS_ACTIVE_FIRE_PATH = '/home/marycamila/flaresat/results_comparison/source/active_fire/model_unet_Voting_10c_final_weights.h5'
+WEIGHTS_ACTIVE_FIRE_PATH = '/home/marycamila/flaresat/results_comparison/source/active_fire/model_unet_Voting_3c_final_weights.h5'
 THRESHOLD_ACTIVE_FIRE = 0.25
 
 #Flaresat
-MODEL_PATH = '/home/marycamila/flaresat/train/train_output/transfer_learning/flaresat-10c-16bs-32f-3lr.hdf5'
+N_CHANNELS = 3
+BANDS = [3,5,7]
+
+MODEL_PATH = "/home/marycamila/flaresat/train/train_output/attention_unet/flaresat-3c-467b-32f-16bs.hdf5"
 THRESHOLD_FLARESAT = 0.50
 
-images_test = pd.read_csv('/home/marycamila/flaresat/dataset/comparison/images_test_flare.csv')
-masks_test = pd.read_csv('/home/marycamila/flaresat/dataset/comparison/masks_test_flare.csv')
+images_test = pd.read_csv('/home/marycamila/flaresat/dataset/images_test.csv')
+masks_test = pd.read_csv('/home/marycamila/flaresat/dataset/masks_test.csv')
 
 
 def conv2d_block(input_tensor, n_filters, kernel_size=3, batchnorm=True):
@@ -56,7 +60,7 @@ def conv2d_block(input_tensor, n_filters, kernel_size=3, batchnorm=True):
     return x
 
 
-def get_unet(input_height=256, input_width=256, n_filters=64, dropout=0.1, batchnorm=True):
+def get_unet(input_height=256, input_width=256, n_filters=16, dropout=0.1, batchnorm=True):
     input_img = Input(shape=(input_height, input_width, N_CHANNELS))
 
     # contracting path
@@ -120,25 +124,23 @@ def get_unet(input_height=256, input_width=256, n_filters=64, dropout=0.1, batch
 active_fire_model = get_unet()
 active_fire_model.load_weights(WEIGHTS_ACTIVE_FIRE_PATH)
 
-truth_patches = np.array([load_patch(path, N_CHANNELS, bands=N_CHANNELS) for path in images_test['tiff_file']])
+truth_patches = np.array([load_patch(path, N_CHANNELS_ACTIVE_FIRE, bands=BANDS_ACTIVE_FIRE) for path in images_test['tiff_file']])
 truth_masks = np.array([get_mask_patch(path) for path in masks_test['mask_file']])
 
 # Activefire Model
 method_masks = active_fire_model.predict(truth_patches)
-
 method_masks_binary = np.where(method_masks > THRESHOLD_ACTIVE_FIRE, 1, 0)
-
 y_test_flat = truth_masks.flatten()
 y_pred_flat = method_masks_binary.flatten()
 
 get_metrics_results(y_pred_flat, y_test_flat)
 
 #Flaresat Model
+model = tf.keras.models.load_model(MODEL_PATH)
 
-# model = tf.keras.models.load_model(MODEL_PATH)
+truth_patches_flare = np.array([load_patch(path, n_channels=N_CHANNELS, bands=BANDS) for path in images_test['tiff_file']])
+y_pred = model.predict(truth_patches_flare)
+y_pred_thresholded = np.where(y_pred > THRESHOLD_FLARESAT, 1, 0)
+flaresat_output = (y_pred_thresholded * 255).astype(np.uint8)
 
-#y_pred = model.predict(truth_patches)
-#y_pred_thresholded = np.where(y_pred > THRESHOLD_FLARESAT, 1, 0)
-#flaresat_output = (y_pred_thresholded * 255).astype(np.uint8)
-
-#plot_inferences(truth_masks, method_masks_binary, truth_patches, flaresat_output, OUTPUT_PATH, list_entities_plot=[], method="af", n_images=len(truth_masks), cloud_masks=[])
+plot_inferences(truth_masks, method_masks_binary, truth_patches_flare, flaresat_output, OUTPUT_PATH, 2, list_entities_plot=[], method="af", n_images=len(truth_masks), cloud_masks=[])
