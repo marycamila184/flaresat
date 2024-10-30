@@ -6,6 +6,7 @@ from keras.callbacks import ModelCheckpoint
 from tensorflow.keras.utils import plot_model
 from matplotlib import pyplot as plt
 
+from models.transfer_learning.unet_attention_sentinel_landcover import unet_attention_sentinel_landcover
 from models.transfer_learning.unet_sentinel_landcover import unet_sentinel_landcover
 from models.attention_unet import unet_attention_model
 from models.unet import unet_model
@@ -29,10 +30,10 @@ EPOCHS = 150
 
 IMAGE_SIZE = (256, 256)
 
-N_CHANNELS = 4
-BANDS = [3,4,5,6]
-DICT_CHANNELS = (3,4,5,6)
-BATCH_SIZE = 16
+N_CHANNELS = 10
+BANDS = []
+DICT_CHANNELS = ()
+BATCH_SIZE = 10
 
 RANDOM_STATE = 42
 OUTPUT_DIR = '/home/marycamila/flaresat/train/train_output'
@@ -63,9 +64,9 @@ val_generator = ImageMaskGenerator(
 )
 
 #model = unet_model(input_size=(IMAGE_SIZE[0], IMAGE_SIZE[1], N_CHANNELS))
-model = unet_attention_model(input_size=(IMAGE_SIZE[0], IMAGE_SIZE[1], N_CHANNELS))
-#model = unet_sentinel_landcover(input_size=(IMAGE_SIZE[0], IMAGE_SIZE[1], N_CHANNELS), add_attention=False, dict_channels=DICT_CHANNELS)
-#model = unet_sentinel_landcover(input_size=(IMAGE_SIZE[0], IMAGE_SIZE[1], N_CHANNELS), add_attention=True, dict_channels=DICT_CHANNELS)
+#model = unet_attention_model(input_size=(IMAGE_SIZE[0], IMAGE_SIZE[1], N_CHANNELS))
+#model = unet_sentinel_landcover(input_size=(IMAGE_SIZE[0], IMAGE_SIZE[1], N_CHANNELS), dict_channels=DICT_CHANNELS)
+model = unet_attention_sentinel_landcover(input_size=(IMAGE_SIZE[0], IMAGE_SIZE[1], N_CHANNELS), dict_channels=DICT_CHANNELS)
 model.summary()
 
 model_view = os.path.join(OUTPUT_DIR, "model_architecture.png")

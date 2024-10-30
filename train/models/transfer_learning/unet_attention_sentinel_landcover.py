@@ -8,13 +8,27 @@ import tensorflow as tf
 LEARNING_RATE = 0.001
 MASK_CHANNELS = 1
 
-def unet_sentinel_landcover(input_size, dict_channels=None, seed=42):
+
+def attention_block(g, x, num_filters):
+    theta_x = layers.Conv2D(num_filters, (1, 1), strides=(1, 1), padding='same')(x)
+    phi_g = layers.Conv2D(num_filters, (1, 1), strides=(1, 1), padding='same')(g)
+
+    add = layers.add([theta_x, phi_g])
+    relu = layers.Activation('relu')(add)
+
+    psi = layers.Conv2D(1, (1, 1), strides=(1, 1), padding='same')(relu)
+    sigmoid = layers.Activation('sigmoid')(psi)
+    
+    upsampled_sigmoid = tf.image.resize(sigmoid, size=(tf.shape(x)[1], tf.shape(x)[2])) 
+    attention = layers.multiply([x, upsampled_sigmoid])
+
+    return attention
+
+
+def unet_attention_sentinel_landcover(input_size, dict_channels=None, seed=42):
     n_channels = input_size[2]
     new_model = unet_builder.build_unet(n_channels, MASK_CHANNELS, activation='sigmoid')  # Flare binary output
 
-    # https://github.com/mayrajeo/lulc_ml
-    # https://jyx.jyu.fi/handle/123456789/60705
-    # Land cover classification from multispectral data using convolutional autoencoder networks
     existing_model = unet_builder.build_unet(14, 13, activation='softmax')  # Original model - 13 classes
     existing_model.load_weights('/home/marycamila/flaresat/train/models/transfer_learning/models/unet-sentinel-landcover-14c.h5')
     existing_weights = existing_model.get_weights()
@@ -62,6 +76,32 @@ def unet_sentinel_landcover(input_size, dict_channels=None, seed=42):
     existing_weights[-1] = np.zeros(new_output_bias_shape)
 
     new_model.set_weights(existing_weights)
+
+    inputs = new_model.input
+    encoder_outputs = {
+        'decoder_stage0_up': new_model.get_layer('encoder_stage3_relu2').output,
+        'decoder_stage1_up': new_model.get_layer('encoder_stage2_relu2').output,
+        'decoder_stage2_up': new_model.get_layer('encoder_stage1_relu2').output,
+        'decoder_stage3_up': new_model.get_layer('encoder_stage0_relu2').output
+    }
+
+    removed_layers = ["decoder_stage0_bn1", "decoder_stage0_relu1",
+                      "decoder_stage1_bn1", "decoder_stage1_relu1",
+                      "decoder_stage2_bn1", "decoder_stage2_relu1",
+                      "decoder_stage3_bn1", "decoder_stage3_relu1", "concatenate",
+                      "concatenate_1", "concatenate_2", "concatenate_3"]
+
+    # Add attention blocks
+    x = inputs
+    for layer in new_model.layers:
+        if layer.name not in removed_layers:
+            x = layer(x)
+            if layer.name in encoder_outputs:            
+                skip_connection = encoder_outputs[layer.name]
+                attended_skip = attention_block(layer.output, skip_connection, num_filters=layer.output.shape[-1])
+                x = layers.Concatenate()([attended_skip, x])         
+
+    new_model = Model(inputs=inputs, outputs=x)
     new_model.compile(optimizer=Adam(learning_rate=LEARNING_RATE), loss='binary_focal_crossentropy', metrics=['accuracy'])
 
     return new_model

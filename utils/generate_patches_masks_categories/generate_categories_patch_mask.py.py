@@ -20,6 +20,9 @@ PATCH_SIZE = 256
 CATEGORY = "urban_areas"
 ATTR = "urban"
 
+#CATEGORY = "volcanoes"
+#ATTR = "volcano"
+
 PATH_CSV_POINTS = '/home/marycamila/flaresat/source/csv_points/gas_flaring_points.csv'
 PATCH_PATH = "/home/marycamila/flaresat/dataset/" + CATEGORY + "_patches"
 PATCH_MASK_PATH = "/home/marycamila/flaresat/dataset/" + CATEGORY + "_mask_patches"
@@ -160,10 +163,10 @@ def check_patch_active_fire(patch_tiff):
     result_unet = y_pred[0, :, :, 0] > TH_FIRE    
     num_true_pixels = np.sum(result_unet)
 
-    return num_true_pixels >= 0
+    return num_true_pixels >= 2
 
 
-def save_tiff_patch_and_mask(patch_img, entity_id, row, col, is_volcano=False):
+def save_tiff_patch_and_mask(patch_img, entity_id, row, col):
     row, col = str(row), str(col)
 
     patch_filename = f"{ATTR}_{entity_id}_{row}_{col}_patch.tiff"
@@ -178,7 +181,7 @@ def save_tiff_patch_and_mask(patch_img, entity_id, row, col, is_volcano=False):
     mask_img.save(mask_file_path)
 
 
-list_patch_urban= []
+list_patch = []
 
 for row in df.itertuples():
     entity_id = row.entity_id_sat
@@ -197,14 +200,17 @@ for row in df.itertuples():
 
     patch_img = np.float32(patch_img) / MAX_PIXEL_VALUE
 
-    latitude_cat = row.urban_latitude
-    longitude_cat = row.urban_longitude
+    if CATEGORY == "urban_areas":
+        latitude_cat = row.urban_latitude
+        longitude_cat = row.urban_longitude
+    else:
+        latitude_cat = row.vulcan_latitude
+        longitude_cat = row.vulcan_longitude
 
     if check_patch_active_fire(patch_img):
-        list_patch_urban.append({"entity_id_sat": entity_id, "row_index": row_index, "col_index": col_index})
-
-    save_tiff_patch_and_mask(patch_img, entity_id, row_index, col_index, is_volcano=(CATEGORY == "volcanoes"))
+        list_patch.append({"entity_id_sat": entity_id, "row_index": row_index, "col_index": col_index})
+        save_tiff_patch_and_mask(patch_img, entity_id, row_index, col_index)
     
-df_category_summary = pd.DataFrame(list_patch_urban)
+df_category_summary = pd.DataFrame(list_patch)
 df_category_summary.to_csv("/home/marycamila/flaresat/source/" + CATEGORY + "/patchs_" + CATEGORY + "_fire.csv", index=False)
 

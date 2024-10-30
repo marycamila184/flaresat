@@ -74,7 +74,7 @@ df = df.head(150)
 
 if "date_start" not in df.columns:
     df["date_start"] = "01-08-2019"
-    df["date_finish"] = "31-08-2019"
+    df["date_finish"] = "30-09-2019"
                
 auth_login_time, token = utils.landsat_auth.return_token()
 

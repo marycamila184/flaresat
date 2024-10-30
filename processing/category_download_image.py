@@ -8,7 +8,7 @@ import requests
 import shutil
 import os
 
-WORKERS = 4
+WORKERS = 1
 CATEGORY = "urban_areas"
 URL_BASE = "https://m2m.cr.usgs.gov/api/api/json/stable/"
 PRODUCT_ID = "5e81f14f92acf9ef"

@@ -20,7 +20,7 @@ def plot_inferences(truth_masks, method_masks, truth_patches, flaresat_masks, ou
             cloud_mask = cv2.cvtColor(cloud_mask.astype(np.uint8), cv2.COLOR_GRAY2BGR)
             cv2.putText(cloud_mask, 'Cloud Mask', (10, 25), cv2.FONT_HERSHEY_SIMPLEX, 0.3, (255, 255, 255), 1)
 
-        flaresat_mask = flaresat_masks[index].squeeze()
+        flaresat_mask = flaresat_masks[index][:, :]
         flaresat_mask = cv2.normalize(flaresat_mask, None, 0, 255, cv2.NORM_MINMAX)
         flaresat_mask = cv2.cvtColor(flaresat_mask.astype(np.uint8), cv2.COLOR_GRAY2BGR)
         cv2.putText(flaresat_mask, 'Predicted Flare Mask', (10, 25), cv2.FONT_HERSHEY_SIMPLEX, 0.3, (255, 255, 255), 1)

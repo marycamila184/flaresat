@@ -33,7 +33,8 @@ def gru_unet(input_size, base_filters=32):
 
     # Reshape for GRU
     x = layers.Reshape(target_shape=(b1.shape[1]*b1.shape[2], base_filters * 16))(b1)
-    x = layers.GRU(base_filters * 16, return_sequences=True)(x)
+    x = layers.GRU(base_filters * 16, return_sequences=False)(x)
+    # x = layers.Dense(base_filters * 16, activation='relu')(x)
     x = layers.Reshape(target_shape=b1.shape[1:])(x)
 
     # Upsampling

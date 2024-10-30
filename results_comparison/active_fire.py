@@ -34,9 +34,9 @@ THRESHOLD_ACTIVE_FIRE = 0.25
 
 #Flaresat
 N_CHANNELS = 3
-BANDS = [3,5,7]
+BANDS = [3,5,6]
 
-MODEL_PATH = "/home/marycamila/flaresat/train/train_output/attention_unet/flaresat-3c-467b-32f-16bs.hdf5"
+MODEL_PATH = "/home/marycamila/flaresat/train/train_output/transfer_learning/flaresat-3c-467b-32f-16bs.hdf5"
 THRESHOLD_FLARESAT = 0.50
 
 images_test = pd.read_csv('/home/marycamila/flaresat/dataset/images_test.csv')
@@ -133,7 +133,7 @@ method_masks_binary = np.where(method_masks > THRESHOLD_ACTIVE_FIRE, 1, 0)
 y_test_flat = truth_masks.flatten()
 y_pred_flat = method_masks_binary.flatten()
 
-get_metrics_results(y_pred_flat, y_test_flat)
+# get_metrics_results(y_pred_flat, y_test_flat)
 
 #Flaresat Model
 model = tf.keras.models.load_model(MODEL_PATH)
