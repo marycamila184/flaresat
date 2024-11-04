@@ -9,6 +9,13 @@
 
 # Ignore Python cache files
 __pycache__/
+# Specific ignore for binary and lib files
+/flaresat/bin/*
+/flaresat/lib/*
+
+# Ignore virtual environment
+venv/
+env/
 
 # Ignore model and dataset files
 *.h5
@@ -19,3 +26,9 @@ __pycache__/
 *.txt
 *.tar
 *.zip
+*.json
+*.xml
+
+# Ignore temporary files and logs
+*.log
+.DS_Store  # For macOS users

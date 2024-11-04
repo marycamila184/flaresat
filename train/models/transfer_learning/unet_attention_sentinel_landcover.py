@@ -79,27 +79,22 @@ def unet_attention_sentinel_landcover(input_size, dict_channels=None, seed=42):
 
     inputs = new_model.input
     encoder_outputs = {
-        'decoder_stage0_up': new_model.get_layer('encoder_stage3_relu2').output,
-        'decoder_stage1_up': new_model.get_layer('encoder_stage2_relu2').output,
-        'decoder_stage2_up': new_model.get_layer('encoder_stage1_relu2').output,
-        'decoder_stage3_up': new_model.get_layer('encoder_stage0_relu2').output
+        'decoder_stage0_relu1': new_model.get_layer('encoder_stage3_relu2').output,
+        'decoder_stage1_relu1': new_model.get_layer('encoder_stage2_relu2').output,
+        'decoder_stage2_relu1': new_model.get_layer('encoder_stage1_relu2').output,
+        'decoder_stage3_relu1': new_model.get_layer('encoder_stage0_relu2').output
     }
 
-    removed_layers = ["decoder_stage0_bn1", "decoder_stage0_relu1",
-                      "decoder_stage1_bn1", "decoder_stage1_relu1",
-                      "decoder_stage2_bn1", "decoder_stage2_relu1",
-                      "decoder_stage3_bn1", "decoder_stage3_relu1", "concatenate",
-                      "concatenate_1", "concatenate_2", "concatenate_3"]
-
-    # Add attention blocks
     x = inputs
+
     for layer in new_model.layers:
-        if layer.name not in removed_layers:
-            x = layer(x)
+        if 'concatenate' not in layer.name:
             if layer.name in encoder_outputs:            
                 skip_connection = encoder_outputs[layer.name]
-                attended_skip = attention_block(layer.output, skip_connection, num_filters=layer.output.shape[-1])
-                x = layers.Concatenate()([attended_skip, x])         
+                attended_skip = attention_block(layer.output, skip_connection, num_filters=layer.output.shape[-1])                
+            x = layer(x)
+        else:
+            x = layers.Concatenate()([attended_skip, x])
 
     new_model = Model(inputs=inputs, outputs=x)
     new_model.compile(optimizer=Adam(learning_rate=LEARNING_RATE), loss='binary_focal_crossentropy', metrics=['accuracy'])

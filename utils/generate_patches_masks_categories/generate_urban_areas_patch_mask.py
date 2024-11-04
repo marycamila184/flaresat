@@ -8,6 +8,7 @@ import os
 from rasterio.windows import Window
 import rasterio as rio
 import tifffile as tiff
+import math
 
 import tensorflow as tf
 from tensorflow.python.keras import backend as K
@@ -17,8 +18,8 @@ from keras.models import *
 MAX_PIXEL_VALUE = 65535
 PATCH_SIZE = 256
 
-CATEGORY = "volcanoes"
-ATTR = "volcano"
+CATEGORY = "urban_areas"
+ATTR = "urban"
 
 PATH_CSV_POINTS = '/home/marycamila/flaresat/source/csv_points/gas_flaring_points.csv'
 PATCH_PATH = "/home/marycamila/flaresat/dataset/" + CATEGORY + "_patches"
@@ -28,6 +29,8 @@ TH_FIRE = 0.25
 CUDA_DEVICE = 0
 
 os.environ["CUDA_VISIBLE_DEVICES"] = str(CUDA_DEVICE)
+
+df_flare_points = pd.read_csv(PATH_CSV_POINTS)
 
 try:
     config = tf.compat.v1.ConfigProto()
@@ -116,8 +119,6 @@ def get_unet(input_height=256, input_width=256, n_filters=16, dropout=0.1, batch
     return model
 
 
-df = pd.read_csv("/home/marycamila/flaresat/source/" + CATEGORY + "/scenes_points_" + CATEGORY + "_queue.csv")
-
 weights_path = "/home/marycamila/flaresat/fire_mask/model_unet_Voting_3c_final_weights.h5"
 model = get_unet()
 model.load_weights(weights_path)
@@ -160,7 +161,7 @@ def check_patch_active_fire(patch_tiff):
     result_unet = y_pred[0, :, :, 0] > TH_FIRE    
     num_true_pixels = np.sum(result_unet)
 
-    return num_true_pixels >= 2
+    return num_true_pixels >= 3
 
 
 def save_tiff_patch_and_mask(patch_img, entity_id, row, col):
@@ -178,28 +179,68 @@ def save_tiff_patch_and_mask(patch_img, entity_id, row, col):
     mask_img.save(mask_file_path)
 
 
+def km_to_deg_lat_lon(lat, distance_km):
+    lat_km_per_deg = 111.32
+    lon_km_per_deg = 111.32 * math.cos(math.radians(lat))
+    
+    deg_lat = distance_km / lat_km_per_deg
+    deg_lon = distance_km / lon_km_per_deg
+    return deg_lat, deg_lon
+
+
+def read_metadata(entity):
+
+    return None
+
+
+def is_patch_around_flare_patch(entity, row_index, col_index, patch_size, df_flare_points):
+    scene_metadata = read_metadata(entity)
+    
+    ul_lat = scene_metadata['CORNER_UL_LAT_PRODUCT']
+    ul_lon = scene_metadata['CORNER_UL_LON_PRODUCT']
+    lr_lat = scene_metadata['CORNER_LR_LAT_PRODUCT']
+    lr_lon = scene_metadata['CORNER_LR_LON_PRODUCT']
+
+    total_x_pixels = scene_metadata['REFLECTIVE_SAMPLES']
+    total_y_pixels = scene_metadata['REFLECTIVE_LINES']
+    lat_per_pixel = (ul_lat - lr_lat) / total_y_pixels
+    lon_per_pixel = (lr_lon - ul_lon) / total_x_pixels
+
+    patch_ul_lat = ul_lat - (row_index * patch_size * lat_per_pixel)
+    patch_ul_lon = ul_lon + (col_index * patch_size * lon_per_pixel)
+    patch_lr_lat = patch_ul_lat - (patch_size * lat_per_pixel)
+    patch_lr_lon = patch_ul_lon + (patch_size * lon_per_pixel)
+
+    for _, point in df_flare_points.iterrows():
+        lat, lon = point["lat"], point["lng"]
+
+        deg_lat, deg_lon = km_to_deg_lat_lon(lat, 20)
+        min_lat = lat - deg_lat
+        max_lat = lat + deg_lat
+        min_lon = lon - deg_lon
+        max_lon = lon + deg_lon
+
+        if not (max_lat < patch_lr_lat or min_lat > patch_ul_lat or max_lon < patch_ul_lon or min_lon > patch_lr_lon):
+            return True
+
+    return False
+    
+list_scenes = os.listdir(PATH_RAW)
 list_patch = []
 
-for row in df.itertuples():
-    entity_id = row.entity_id_sat
-    row_index = row.row_index
-    col_index = row.col_index
-    coord_row = row.row
-    coord_col = row.col
-
-    scene_path = os.path.join(PATH_RAW, entity_id)
+for entity in list_scenes:
+    scene_path = os.path.join(PATH_RAW, entity)
     scene_img = preprocessing_tiff(scene_path)
 
-    patch_img = get_patch_tiff(row_index, col_index, scene_img)
+    width, height, _ = scene_img.shape
+    for row_index in range(0, height, 256):
+        for col_index in range(0, width, 256):
+            patch = get_patch_tiff(row_index, col_index)
 
-    patch_img = np.float32(patch_img) / MAX_PIXEL_VALUE
-
-    latitude_cat = row.vulcan_latitude
-    longitude_cat = row.vulcan_longitude
-    
-    if check_patch_active_fire(patch_img):
-        list_patch.append({"entity_id_sat": entity_id, "row_index": row_index, "col_index": col_index})
-        save_tiff_patch_and_mask(patch_img, entity_id, row_index, col_index)
+            if not is_patch_around_flare_patch(entity, patch) and check_patch_active_fire(patch):
+                patch_img = np.float32(patch_img) / MAX_PIXEL_VALUE
+                list_patch.append({"entity_id_sat": entity, "row_index": row_index, "col_index": col_index})
+                save_tiff_patch_and_mask(patch_img, entity, row_index, col_index)
     
 df_category_summary = pd.DataFrame(list_patch)
 df_category_summary.to_csv("/home/marycamila/flaresat/source/" + CATEGORY + "/patchs_" + CATEGORY + "_fire.csv", index=False)

@@ -24,8 +24,8 @@ THRESHOLD = 0.50
 
 IMAGE_SIZE = 256
 
-N_CHANNELS = 10
-BANDS = []
+N_CHANNELS = 3
+BANDS = [3,5,6]
 
 def dice_coefficient(y_true, y_pred):
     intersection = np.sum(y_true * y_pred)
@@ -38,8 +38,8 @@ masks_test = pd.read_csv('/home/marycamila/flaresat/dataset/masks_test.csv')
 test_images = np.array([processing.load_image(path, N_CHANNELS, bands=BANDS) for path in images_test['tiff_file']])
 test_masks = np.array([processing.load_mask(path) for path in masks_test['mask_file']])
 
-model_path = os.path.join(OUTPUT_DIR, MODEL_FILE_NAME)
-#model_path = '/home/marycamila/flaresat/train/train_output/flaresat10c0005.hdf5'
+#model_path = os.path.join(OUTPUT_DIR, MODEL_FILE_NAME)
+model_path = '/home/marycamila/flaresat/train/train_output/attention_unet/flaresat-3c-467b-32f-16bs.hdf5'
 model = load_model(model_path)
 
 y_pred = model.predict(test_images)
@@ -61,10 +61,10 @@ intersection = np.logical_and(y_test_flat, y_pred_flat)
 union = np.logical_or(y_test_flat, y_pred_flat)
 iou = np.sum(intersection) / np.sum(union)
 
-dice = dice_coefficient(y_test_flat, y_pred_flat)
+#dice = dice_coefficient(y_test_flat, y_pred_flat)
 
 print(f"Precision: {precision}")
 print(f"Recall: {recall}")
 print(f"F1 Score: {f1}")
-print(f"Dice Coefficient: {dice}")
+#E print(f"Dice Coefficient: {dice}")
 print(f"IoU: {iou}")
