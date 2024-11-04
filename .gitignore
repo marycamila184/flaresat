@@ -12,6 +12,7 @@ __pycache__/
 # Specific ignore for binary and lib files
 /flaresat/bin/*
 /flaresat/lib/*
+/flaresat/lib64/*
 
 # Ignore virtual environment
 venv/
