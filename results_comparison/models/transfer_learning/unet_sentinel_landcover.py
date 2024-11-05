@@ -3,42 +3,18 @@ from models.transfer_learning.builder import unet_builder
 from tensorflow.keras.initializers import HeNormal
 from tensorflow.keras.optimizers import Adam
 from tensorflow.keras import layers, Model
-from tensorflow.keras.layers import Layer
 import tensorflow as tf
 
 LEARNING_RATE = 0.001
 MASK_CHANNELS = 1
 
-class ResizeLayer(Layer):
-    def __init__(self):
-        super(ResizeLayer, self).__init__()
-
-    def call(self, inputs):
-        size = (tf.shape(inputs)[1], tf.shape(inputs)[2])
-        return tf.image.resize(inputs, size=size)
-    
-
-def attention_block(g, x, num_filters):
-    resize_layer = ResizeLayer()
-    
-    theta_x = layers.Conv2D(num_filters, (1, 1), strides=(1, 1), padding='same')(x)
-    phi_g = layers.Conv2D(num_filters, (1, 1), strides=(1, 1), padding='same')(g)
-
-    add = layers.add([theta_x, phi_g])
-    relu = layers.Activation('relu')(add)
-
-    psi = layers.Conv2D(1, (1, 1), strides=(1, 1), padding='same')(relu)
-    sigmoid = layers.Activation('sigmoid')(psi)
-    
-    upsampled_sigmoid = resize_layer(sigmoid)
-    attention = layers.multiply([x, upsampled_sigmoid])
-    return attention
-
-
-def unet_attention_sentinel_landcover(input_size, dict_channels=None, seed=42):
+def unet_sentinel_landcover(input_size, dict_channels=None, seed=42):
     n_channels = input_size[2]
     new_model = unet_builder.build_unet(n_channels, MASK_CHANNELS, activation='sigmoid')  # Flare binary output
 
+    # https://github.com/mayrajeo/lulc_ml
+    # https://jyx.jyu.fi/handle/123456789/60705
+    # Land cover classification from multispectral data using convolutional autoencoder networks
     existing_model = unet_builder.build_unet(14, 13, activation='softmax')  # Original model - 13 classes
     existing_model.load_weights('/home/marycamila/flaresat/train/models/transfer_learning/models/unet-sentinel-landcover-14c.h5')
     existing_weights = existing_model.get_weights()
@@ -86,28 +62,6 @@ def unet_attention_sentinel_landcover(input_size, dict_channels=None, seed=42):
     existing_weights[-1] = np.zeros(new_output_bias_shape)
 
     new_model.set_weights(existing_weights)
-
-    inputs = new_model.input
-    encoder_outputs = {
-        'decoder_stage0_relu1': new_model.get_layer('encoder_stage3_relu2').output,
-        'decoder_stage1_relu1': new_model.get_layer('encoder_stage2_relu2').output,
-        'decoder_stage2_relu1': new_model.get_layer('encoder_stage1_relu2').output,
-        'decoder_stage3_relu1': new_model.get_layer('encoder_stage0_relu2').output
-    }
-
-    x = inputs
-
-    for layer in new_model.layers:        
-        if 'concatenate' not in layer.name and 'input_layer' not in layer.name:
-            if layer.name in encoder_outputs:            
-                skip_connection = encoder_outputs[layer.name]
-                attended_skip = attention_block(layer.output, skip_connection, num_filters=layer.output.shape[-1])
-                x = layer(x)
-                x = layers.Concatenate()([attended_skip, x])
-            else:
-                x = layer(x)
-
-    new_model = Model(inputs=inputs, outputs=x)
     new_model.compile(optimizer=Adam(learning_rate=LEARNING_RATE), loss='binary_focal_crossentropy', metrics=['accuracy'])
 
     return new_model

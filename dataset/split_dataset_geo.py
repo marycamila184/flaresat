@@ -205,3 +205,7 @@ y_test.to_csv(os.path.join(PATH_DATASET, 'masks_test.csv'), index=False)
 # # Teste - only volcanoes patches
 # x_test_volcano.to_csv(os.path.join(PATH_DATASET, 'images_volcanoes_test.csv'), index=False)
 # y_test_volcano.to_csv(os.path.join(PATH_DATASET, 'images_volcanoes_mask.csv'), index=False)
+
+# # Teste - only volcanoes patches
+# x_test_volcano.to_csv(os.path.join(PATH_DATASET, 'images_volcanoes_test.csv'), index=False)
+# y_test_volcano.to_csv(os.path.join(PATH_DATASET, 'images_volcanoes_mask.csv'), index=False)

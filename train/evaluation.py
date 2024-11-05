@@ -1,7 +1,12 @@
 from sklearn.metrics import precision_score, recall_score, f1_score
 import utils.processing as processing
-from tensorflow.keras.models import load_model
+from keras.models import load_model
 import tensorflow as tf
+
+from models.transfer_learning.unet_attention_sentinel_landcover import unet_attention_sentinel_landcover
+from models.transfer_learning.unet_sentinel_landcover import unet_sentinel_landcover
+from models.attention_unet import unet_attention_model
+from models.unet import unet_model
 
 import os
 import numpy as np
@@ -18,19 +23,13 @@ try:
 except:
     pass
 
-OUTPUT_DIR = '/home/marycamila/flaresat/train/train_output'
-MODEL_FILE_NAME = 'flaresat.hdf5'
+MODEL_FILE_NAME = '/home/marycamila/flaresat/train/train_output/flaresat.hdf5'
 THRESHOLD = 0.50
 
-IMAGE_SIZE = 256
-
-N_CHANNELS = 3
-BANDS = [3,5,6]
-
-def dice_coefficient(y_true, y_pred):
-    intersection = np.sum(y_true * y_pred)
-    dice = (2. * intersection) / (np.sum(y_true) + np.sum(y_pred))
-    return dice
+N_CHANNELS = 10
+BANDS = []
+DICT_CHANNELS = ()
+IMAGE_SIZE=(256,256)
 
 images_test = pd.read_csv('/home/marycamila/flaresat/dataset/images_test.csv')
 masks_test = pd.read_csv('/home/marycamila/flaresat/dataset/masks_test.csv')
@@ -38,9 +37,15 @@ masks_test = pd.read_csv('/home/marycamila/flaresat/dataset/masks_test.csv')
 test_images = np.array([processing.load_image(path, N_CHANNELS, bands=BANDS) for path in images_test['tiff_file']])
 test_masks = np.array([processing.load_mask(path) for path in masks_test['mask_file']])
 
-#model_path = os.path.join(OUTPUT_DIR, MODEL_FILE_NAME)
-model_path = '/home/marycamila/flaresat/train/train_output/attention_unet/flaresat-3c-467b-32f-16bs.hdf5'
-model = load_model(model_path)
+
+#model = unet_model(input_size=(IMAGE_SIZE[0], IMAGE_SIZE[1], N_CHANNELS))
+#model = unet_attention_model(input_size=(IMAGE_SIZE[0], IMAGE_SIZE[1], N_CHANNELS))
+model = unet_sentinel_landcover(input_size=(IMAGE_SIZE[0], IMAGE_SIZE[1], N_CHANNELS), dict_channels=DICT_CHANNELS)
+#model = unet_attention_sentinel_landcover(input_size=(IMAGE_SIZE[0], IMAGE_SIZE[1], N_CHANNELS), dict_channels=DICT_CHANNELS)
+
+#model_path = os.path.join(MODEL_FILE_NAME)
+model_path = '/home/marycamila/flaresat/train/train_output/transfer_learning/flaresat-10c-32f-16bs.hdf5'
+model.load_weights(model_path)
 
 y_pred = model.predict(test_images)
 
@@ -61,10 +66,7 @@ intersection = np.logical_and(y_test_flat, y_pred_flat)
 union = np.logical_or(y_test_flat, y_pred_flat)
 iou = np.sum(intersection) / np.sum(union)
 
-#dice = dice_coefficient(y_test_flat, y_pred_flat)
-
 print(f"Precision: {precision}")
 print(f"Recall: {recall}")
 print(f"F1 Score: {f1}")
-#E print(f"Dice Coefficient: {dice}")
 print(f"IoU: {iou}")

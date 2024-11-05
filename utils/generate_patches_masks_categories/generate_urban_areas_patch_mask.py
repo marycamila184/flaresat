@@ -1,4 +1,5 @@
 import glob
+import re
 import tifffile as tiff
 from PIL import Image
 import pandas as pd
@@ -26,7 +27,9 @@ PATCH_PATH = "/home/marycamila/flaresat/dataset/" + CATEGORY + "_patches"
 PATCH_MASK_PATH = "/home/marycamila/flaresat/dataset/" + CATEGORY + "_mask_patches"
 PATH_RAW = "/media/marycamila/Expansion/raw/" + CATEGORY
 TH_FIRE = 0.25
-CUDA_DEVICE = 0
+CUDA_DEVICE = 1
+PATCH_SIZE = 256
+KM_DISTANCE = 10
 
 os.environ["CUDA_VISIBLE_DEVICES"] = str(CUDA_DEVICE)
 
@@ -138,8 +141,8 @@ def preprocessing_tiff(fpath):
     return tiff
 
 
-def get_patch_tiff(row, col, tiif_patch):
-    height, width, _ = tiif_patch.shape
+def get_patch_tiff(row, col, tiff_scene):
+    height, width, _ = tiff_scene.shape
     row = row * 256
     col = col * 256
 
@@ -149,7 +152,7 @@ def get_patch_tiff(row, col, tiif_patch):
         row = height - PATCH_SIZE
 
     window = Window(col, row, PATCH_SIZE, PATCH_SIZE)
-    patch = tiif_patch[window.row_off:window.row_off + window.height,
+    patch = tiff_scene[window.row_off:window.row_off + window.height,
                        window.col_off:window.col_off + window.width, :]
     return patch
 
@@ -179,6 +182,24 @@ def save_tiff_patch_and_mask(patch_img, entity_id, row, col):
     mask_img.save(mask_file_path)
 
 
+def open_txt_get_props(file_path):
+    metadata = {}
+    with open(file_path, 'r') as file:
+        for line in file:
+            match = re.match(r"\s*(\w+)\s*=\s*\"?([^\"]+)\"?", line)
+            if match:
+                key, value = match.groups()
+                metadata[key] = value
+    return metadata
+
+
+def read_metadata(entity_id):
+    path = os.path.join(PATH_RAW, entity_id)         
+    metadata_file = glob.glob(os.path.join(path, '*_MTL.txt'))[0]
+   
+    return metadata_file
+
+
 def km_to_deg_lat_lon(lat, distance_km):
     lat_km_per_deg = 111.32
     lon_km_per_deg = 111.32 * math.cos(math.radians(lat))
@@ -188,33 +209,30 @@ def km_to_deg_lat_lon(lat, distance_km):
     return deg_lat, deg_lon
 
 
-def read_metadata(entity):
-
-    return None
-
-
-def is_patch_around_flare_patch(entity, row_index, col_index, patch_size, df_flare_points):
-    scene_metadata = read_metadata(entity)
+def is_patch_around_flare_patch(entity, row_index, col_index):
+    metadata_file = read_metadata(entity)    
+    scene_metadata = open_txt_get_props(metadata_file)
     
-    ul_lat = scene_metadata['CORNER_UL_LAT_PRODUCT']
-    ul_lon = scene_metadata['CORNER_UL_LON_PRODUCT']
-    lr_lat = scene_metadata['CORNER_LR_LAT_PRODUCT']
-    lr_lon = scene_metadata['CORNER_LR_LON_PRODUCT']
+    ul_lat = float(scene_metadata['CORNER_UL_LAT_PRODUCT'])
+    ul_lon = float(scene_metadata['CORNER_UL_LON_PRODUCT'])
+    lr_lat = float(scene_metadata['CORNER_LR_LAT_PRODUCT'])
+    lr_lon = float(scene_metadata['CORNER_LR_LON_PRODUCT'])
 
-    total_x_pixels = scene_metadata['REFLECTIVE_SAMPLES']
-    total_y_pixels = scene_metadata['REFLECTIVE_LINES']
+    total_x_pixels = int(scene_metadata['REFLECTIVE_SAMPLES'])
+    total_y_pixels = int(scene_metadata['REFLECTIVE_LINES'])
     lat_per_pixel = (ul_lat - lr_lat) / total_y_pixels
     lon_per_pixel = (lr_lon - ul_lon) / total_x_pixels
 
-    patch_ul_lat = ul_lat - (row_index * patch_size * lat_per_pixel)
-    patch_ul_lon = ul_lon + (col_index * patch_size * lon_per_pixel)
-    patch_lr_lat = patch_ul_lat - (patch_size * lat_per_pixel)
-    patch_lr_lon = patch_ul_lon + (patch_size * lon_per_pixel)
+    # Calculate the patch boundaries
+    patch_ul_lat = ul_lat - (row_index * PATCH_SIZE * lat_per_pixel)
+    patch_ul_lon = ul_lon + (col_index * PATCH_SIZE * lon_per_pixel)
+    patch_lr_lat = patch_ul_lat - (PATCH_SIZE * lat_per_pixel)
+    patch_lr_lon = patch_ul_lon + (PATCH_SIZE * lon_per_pixel)
 
     for _, point in df_flare_points.iterrows():
-        lat, lon = point["lat"], point["lng"]
+        lat, lon = point["latitude"], point["longitude"]
 
-        deg_lat, deg_lon = km_to_deg_lat_lon(lat, 20)
+        deg_lat, deg_lon = km_to_deg_lat_lon(lat, KM_DISTANCE)
         min_lat = lat - deg_lat
         max_lat = lat + deg_lat
         min_lon = lon - deg_lon
@@ -224,7 +242,8 @@ def is_patch_around_flare_patch(entity, row_index, col_index, patch_size, df_fla
             return True
 
     return False
-    
+
+
 list_scenes = os.listdir(PATH_RAW)
 list_patch = []
 
@@ -235,12 +254,14 @@ for entity in list_scenes:
     width, height, _ = scene_img.shape
     for row_index in range(0, height, 256):
         for col_index in range(0, width, 256):
-            patch = get_patch_tiff(row_index, col_index)
+            patch = get_patch_tiff(row_index, col_index,scene_img)
 
-            if not is_patch_around_flare_patch(entity, patch) and check_patch_active_fire(patch):
+            if not is_patch_around_flare_patch(entity, row_index, col_index) and check_patch_active_fire(patch):
                 patch_img = np.float32(patch_img) / MAX_PIXEL_VALUE
                 list_patch.append({"entity_id_sat": entity, "row_index": row_index, "col_index": col_index})
                 save_tiff_patch_and_mask(patch_img, entity, row_index, col_index)
+    
+    print("Finished urban entity: " + entity)
     
 df_category_summary = pd.DataFrame(list_patch)
 df_category_summary.to_csv("/home/marycamila/flaresat/source/" + CATEGORY + "/patchs_" + CATEGORY + "_fire.csv", index=False)

@@ -25,15 +25,15 @@ if gpus:
     except RuntimeError as e:
         print(e)
 
-CHECKPOINT_MODEL_NAME = 'flaresat.hdf5'
+CHECKPOINT_MODEL_NAME = 'flaresat.weights.h5'
 EPOCHS = 150
 
 IMAGE_SIZE = (256, 256)
 
-N_CHANNELS = 4
-BANDS = [3,4,5,6]
-DICT_CHANNELS = (3,5,6)
-BATCH_SIZE = 10
+N_CHANNELS = 10
+BANDS = []
+DICT_CHANNELS = ()
+BATCH_SIZE = 16
 
 RANDOM_STATE = 42
 OUTPUT_DIR = '/home/marycamila/flaresat/train/train_output'
@@ -72,11 +72,12 @@ model.summary()
 model_view = os.path.join(OUTPUT_DIR, "model_architecture.png")
 plot_model(model, to_file=model_view, show_shapes=True, show_layer_names=True)
 
-checkpoint = ModelCheckpoint(
+checkpoint = ModelCheckpoint(    
     os.path.join(OUTPUT_DIR, CHECKPOINT_MODEL_NAME),
     monitor='val_loss',
     verbose=1,
     save_best_only=True,
+    save_weights_only=True,
     mode='auto',
     save_freq='epoch'
 )
