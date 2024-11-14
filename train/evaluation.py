@@ -1,7 +1,5 @@
 from sklearn.metrics import precision_score, recall_score, f1_score
 import utils.processing as processing
-from keras.models import load_model
-import tensorflow as tf
 
 from models.transfer_learning.unet_attention_sentinel_landcover import unet_attention_sentinel_landcover
 from models.transfer_learning.unet_sentinel_landcover import unet_sentinel_landcover
@@ -15,20 +13,14 @@ import pandas as pd
 CUDA_DEVICE = 1
 os.environ["CUDA_VISIBLE_DEVICES"] = str(CUDA_DEVICE)
 
-try:
-    config = tf.compat.v1.ConfigProto()
-    config.gpu_options.allow_growth = True
-    sess = tf.compat.v1.Session(config=config)
-    K.set_session(sess)
-except:
-    pass
-
-MODEL_FILE_NAME = '/home/marycamila/flaresat/train/train_output/flaresat.hdf5'
+#MODEL_PATH = '/home/marycamila/flaresat/train/train_output/unet/flaresat-10c-32f-16bs.hdf5'
+MODEL_PATH = '/home/marycamila/flaresat/train/train_output/flaresat.weights.h5'
 THRESHOLD = 0.50
 
-N_CHANNELS = 10
-BANDS = []
-DICT_CHANNELS = ()
+N_CHANNELS = 4
+BANDS = [3,4,5,6]
+DICT_CHANNELS = (3,4,5,6)
+
 IMAGE_SIZE=(256,256)
 
 images_test = pd.read_csv('/home/marycamila/flaresat/dataset/images_test.csv')
@@ -42,10 +34,7 @@ test_masks = np.array([processing.load_mask(path) for path in masks_test['mask_f
 #model = unet_attention_model(input_size=(IMAGE_SIZE[0], IMAGE_SIZE[1], N_CHANNELS))
 model = unet_sentinel_landcover(input_size=(IMAGE_SIZE[0], IMAGE_SIZE[1], N_CHANNELS), dict_channels=DICT_CHANNELS)
 #model = unet_attention_sentinel_landcover(input_size=(IMAGE_SIZE[0], IMAGE_SIZE[1], N_CHANNELS), dict_channels=DICT_CHANNELS)
-
-#model_path = os.path.join(MODEL_FILE_NAME)
-model_path = '/home/marycamila/flaresat/train/train_output/transfer_learning/flaresat-10c-32f-16bs.hdf5'
-model.load_weights(model_path)
+model.load_weights(MODEL_PATH)
 
 y_pred = model.predict(test_images)
 

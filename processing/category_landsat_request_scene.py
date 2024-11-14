@@ -32,7 +32,7 @@ def make_request(token, item):
                 "cloudCoverFilter": {
                     "max": 10,
                     "min": 0,
-                    "includeUnknown": "false"
+                    "includeUnknown": False
                 }
             }
         

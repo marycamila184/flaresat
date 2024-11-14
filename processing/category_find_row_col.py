@@ -25,6 +25,10 @@ def create_queue_csv():
     df_points["col_index"] = 0
     df_points["row_index"] = 0
     df_points["point_processed"] = False
+
+    scenes_downloaded = os.listdir(PATH_CATEGORY)
+    df_points = df_points[df_points["entity_id_sat"].isin(scenes_downloaded)]
+
     # Setting a queue to stop the processing in case it is needed
     df_points.to_csv("/home/marycamila/flaresat/source/" + CATEGORY + "/scenes_points_" + CATEGORY + "_queue.csv", index=False)
 
@@ -54,9 +58,6 @@ def get_row_col(long, lat, path):
     return row, col, width
 
 
-# Verificar se eu posso colocar mais patches aqui
-# Removendo os que estao nas coordenadas
-
 def calculate_patch_index(row, col):
     col_index = math.floor(col // PATCH_SIZE)
     row_index = math.floor(row // PATCH_SIZE)
@@ -78,6 +79,7 @@ def main():
 
         df_entity = df[df["entity_id_sat"] == image_sat]
         path_image = os.path.join(PATH_CATEGORY, image_sat)
+        
         tiff_b1 = glob.glob(os.path.join(path_image, '*_B1.TIF'))[0]
         
         for _, entity in df_entity.iterrows():

@@ -1,5 +1,5 @@
 import glob
-import re
+import math
 import tifffile as tiff
 from PIL import Image
 import pandas as pd
@@ -9,7 +9,6 @@ import os
 from rasterio.windows import Window
 import rasterio as rio
 import tifffile as tiff
-import math
 
 import tensorflow as tf
 from tensorflow.python.keras import backend as K
@@ -19,21 +18,14 @@ from keras.models import *
 MAX_PIXEL_VALUE = 65535
 PATCH_SIZE = 256
 
-CATEGORY = "urban_areas"
-ATTR = "urban"
-
 PATH_CSV_POINTS = '/home/marycamila/flaresat/source/csv_points/gas_flaring_points.csv'
-PATCH_PATH = "/home/marycamila/flaresat/dataset/" + CATEGORY + "_patches"
-PATCH_MASK_PATH = "/home/marycamila/flaresat/dataset/" + CATEGORY + "_mask_patches"
-PATH_RAW = "/media/marycamila/Expansion/raw/" + CATEGORY
+PATCH_PATH = "/home/marycamila/flaresat/dataset/urban_areas_patches"
+PATCH_MASK_PATH = "/home/marycamila/flaresat/dataset/urban_areas_mask_patches"
+PATH_RAW = "/media/marycamila/Expansion/raw/urban_areas"
 TH_FIRE = 0.25
-CUDA_DEVICE = 1
-PATCH_SIZE = 256
-KM_DISTANCE = 10
+CUDA_DEVICE = 0
 
 os.environ["CUDA_VISIBLE_DEVICES"] = str(CUDA_DEVICE)
-
-df_flare_points = pd.read_csv(PATH_CSV_POINTS)
 
 try:
     config = tf.compat.v1.ConfigProto()
@@ -122,6 +114,8 @@ def get_unet(input_height=256, input_width=256, n_filters=16, dropout=0.1, batch
     return model
 
 
+df = pd.read_csv("/home/marycamila/flaresat/source/urban_areas/scenes_points_urban_areas_queue.csv")
+
 weights_path = "/home/marycamila/flaresat/fire_mask/model_unet_Voting_3c_final_weights.h5"
 model = get_unet()
 model.load_weights(weights_path)
@@ -141,128 +135,77 @@ def preprocessing_tiff(fpath):
     return tiff
 
 
-def get_patch_tiff(row, col, tiff_scene):
-    height, width, _ = tiff_scene.shape
-    row = row * 256
-    col = col * 256
+def get_patches_tiff(row, col, tiif_patch):
+    height, width, _ = tiif_patch.shape
+    patch_size = PATCH_SIZE * 2  # 512x512 patch (4 sub-patches of 256x256)
 
-    if col + PATCH_SIZE > width:
-        col = width - PATCH_SIZE
-    if row + PATCH_SIZE > height:
-        row = height - PATCH_SIZE
+    if col + patch_size > width:
+        col = width - patch_size
+    if row + patch_size > height:
+        row = height - patch_size
 
-    window = Window(col, row, PATCH_SIZE, PATCH_SIZE)
-    patch = tiff_scene[window.row_off:window.row_off + window.height,
+    window = Window(col, row, patch_size, patch_size)
+    patch = tiif_patch[window.row_off:window.row_off + window.height,
                        window.col_off:window.col_off + window.width, :]
-    return patch
+
+    half_patch_size = PATCH_SIZE  # 256 if PATCH_SIZE is 256
+    patch_list = [
+        patch[0:half_patch_size, 0:half_patch_size, :],         # Top-left
+        patch[0:half_patch_size, half_patch_size:patch_size, :], # Top-right
+        patch[half_patch_size:patch_size, 0:half_patch_size, :], # Bottom-left
+        patch[half_patch_size:patch_size, half_patch_size:patch_size, :]  # Bottom-right
+    ]
+
+    return patch_list
 
 
 def check_patch_active_fire(patch_tiff):   
-
     inference_patch = patch_tiff[:,:,[6,5,1]]
     y_pred = model.predict(np.array( [inference_patch] ), batch_size=1)
     result_unet = y_pred[0, :, :, 0] > TH_FIRE    
     num_true_pixels = np.sum(result_unet)
 
-    return num_true_pixels >= 3
+    return num_true_pixels >= 2
 
 
-def save_tiff_patch_and_mask(patch_img, entity_id, row, col):
-    row, col = str(row), str(col)
+def save_tiff_patch_and_mask(patch_img, entity_id, city, index):
+    index = str(index)
 
-    patch_filename = f"{ATTR}_{entity_id}_{row}_{col}_patch.tiff"
+    patch_filename = f"urban_{entity_id}_{city}_{index}_patch.tiff"
     patch_file_path = os.path.join(PATCH_PATH, patch_filename)
     tiff.imwrite(patch_file_path, patch_img)
 
-    mask_filename = f"{ATTR}_{entity_id}_{row}_{col}_mask.tiff"
+    mask_filename = f"urban_{entity_id}_{city}_{index}_mask.tiff"
     mask_file_path = os.path.join(PATCH_MASK_PATH, mask_filename)
 
-    # Create mask (currently just a blank mask)
+    # Create mask
     mask_img = Image.new('L', (256, 256), 0)
     mask_img.save(mask_file_path)
 
+df_city = pd.read_csv("/home/marycamila/flaresat/source/urban_areas/points_urban_areas_valid.csv")
+df_city = df_city[["city","lat","lng"]]
 
-def open_txt_get_props(file_path):
-    metadata = {}
-    with open(file_path, 'r') as file:
-        for line in file:
-            match = re.match(r"\s*(\w+)\s*=\s*\"?([^\"]+)\"?", line)
-            if match:
-                key, value = match.groups()
-                metadata[key] = value
-    return metadata
+df = df.merge(df_city, left_on=["urban_latitude", "urban_longitude"], right_on=["lat","lng"])
 
-
-def read_metadata(entity_id):
-    path = os.path.join(PATH_RAW, entity_id)         
-    metadata_file = glob.glob(os.path.join(path, '*_MTL.txt'))[0]
-   
-    return metadata_file
-
-
-def km_to_deg_lat_lon(lat, distance_km):
-    lat_km_per_deg = 111.32
-    lon_km_per_deg = 111.32 * math.cos(math.radians(lat))
-    
-    deg_lat = distance_km / lat_km_per_deg
-    deg_lon = distance_km / lon_km_per_deg
-    return deg_lat, deg_lon
-
-
-def is_patch_around_flare_patch(entity, row_index, col_index):
-    metadata_file = read_metadata(entity)    
-    scene_metadata = open_txt_get_props(metadata_file)
-    
-    ul_lat = float(scene_metadata['CORNER_UL_LAT_PRODUCT'])
-    ul_lon = float(scene_metadata['CORNER_UL_LON_PRODUCT'])
-    lr_lat = float(scene_metadata['CORNER_LR_LAT_PRODUCT'])
-    lr_lon = float(scene_metadata['CORNER_LR_LON_PRODUCT'])
-
-    total_x_pixels = int(scene_metadata['REFLECTIVE_SAMPLES'])
-    total_y_pixels = int(scene_metadata['REFLECTIVE_LINES'])
-    lat_per_pixel = (ul_lat - lr_lat) / total_y_pixels
-    lon_per_pixel = (lr_lon - ul_lon) / total_x_pixels
-
-    # Calculate the patch boundaries
-    patch_ul_lat = ul_lat - (row_index * PATCH_SIZE * lat_per_pixel)
-    patch_ul_lon = ul_lon + (col_index * PATCH_SIZE * lon_per_pixel)
-    patch_lr_lat = patch_ul_lat - (PATCH_SIZE * lat_per_pixel)
-    patch_lr_lon = patch_ul_lon + (PATCH_SIZE * lon_per_pixel)
-
-    for _, point in df_flare_points.iterrows():
-        lat, lon = point["latitude"], point["longitude"]
-
-        deg_lat, deg_lon = km_to_deg_lat_lon(lat, KM_DISTANCE)
-        min_lat = lat - deg_lat
-        max_lat = lat + deg_lat
-        min_lon = lon - deg_lon
-        max_lon = lon + deg_lon
-
-        if not (max_lat < patch_lr_lat or min_lat > patch_ul_lat or max_lon < patch_ul_lon or min_lon > patch_lr_lon):
-            return True
-
-    return False
-
-
-list_scenes = os.listdir(PATH_RAW)
 list_patch = []
 
-for entity in list_scenes:
-    scene_path = os.path.join(PATH_RAW, entity)
+for row in df.itertuples():
+    entity_id = row.entity_id_sat
+    city = row.city
+    coord_row = row.row
+    coord_col = row.col
+
+    scene_path = os.path.join(PATH_RAW, entity_id)
     scene_img = preprocessing_tiff(scene_path)
 
-    width, height, _ = scene_img.shape
-    for row_index in range(0, height, 256):
-        for col_index in range(0, width, 256):
-            patch = get_patch_tiff(row_index, col_index,scene_img)
+    patch_img_list = get_patches_tiff(coord_row, coord_col, scene_img)
+    patch_img_list = np.float32(patch_img_list) / MAX_PIXEL_VALUE
 
-            if not is_patch_around_flare_patch(entity, row_index, col_index) and check_patch_active_fire(patch):
-                patch_img = np.float32(patch_img) / MAX_PIXEL_VALUE
-                list_patch.append({"entity_id_sat": entity, "row_index": row_index, "col_index": col_index})
-                save_tiff_patch_and_mask(patch_img, entity, row_index, col_index)
-    
-    print("Finished urban entity: " + entity)
+    for index_patch, patch_img in enumerate(patch_img_list):
+        if check_patch_active_fire(patch_img):
+            list_patch.append({"entity_id_sat": entity_id, "city": city, "index_patch": index_patch})
+            save_tiff_patch_and_mask(patch_img, entity_id, city, index_patch)
     
 df_category_summary = pd.DataFrame(list_patch)
-df_category_summary.to_csv("/home/marycamila/flaresat/source/" + CATEGORY + "/patchs_" + CATEGORY + "_fire.csv", index=False)
+df_category_summary.to_csv("/home/marycamila/flaresat/source/urban_areas/patchs_urban_areas_fire.csv", index=False)
 

@@ -1,24 +1,21 @@
-
 import tarfile
 import utils.landsat_auth as auth
-import concurrent.futures
 from datetime import datetime
 import pandas as pd
 import requests
 import shutil
 import os
 
-WORKERS = 1
 CATEGORY = "urban_areas"
 URL_BASE = "https://m2m.cr.usgs.gov/api/api/json/stable/"
 PRODUCT_ID = "5e81f14f92acf9ef"
-PATH_IMAGES="/media/marycamila/Expansion/raw/" + CATEGORY
+PATH_IMAGES = "/media/marycamila/Expansion/raw/" + CATEGORY
 
 def unzip_tar_files(tar_file_path, entity_id):
-    product_list = ["_B1.TIF","_B2.TIF","_B3.TIF","_B4.TIF","_B5.TIF","_B6.TIF","_B7.TIF","_B9.TIF","_B10.TIF","_B11.TIF","_MTL.txt","_QA_PIXEL.TIF"]
+    product_list = ["_B1.TIF", "_B2.TIF", "_B3.TIF", "_B4.TIF", "_B5.TIF", "_B6.TIF", "_B7.TIF", "_B9.TIF", "_B10.TIF", "_B11.TIF", "_MTL.txt", "_QA_PIXEL.TIF"]
     
     path_entity_image = os.path.join(PATH_IMAGES, entity_id) 
-        
+    
     with tarfile.open(tar_file_path, 'r') as tar:
         for member in tar.getmembers():
             if any(product_name in member.name for product_name in product_list):
@@ -71,17 +68,13 @@ def download_image(list_scenes):
     date = datetime.now()
     print("Initiated all downloads: " + str(date))
 
-    for i in range(0, len(list_scenes), WORKERS):
+    for scene in list_scenes:
         diff_auth = datetime.now() - auth_login_time
         if diff_auth.total_seconds() / 60 >= 115:
             auth_login_time, token = auth.return_token()
 
         headers = {'X-Auth-Token': token}
-        scenes_to_download = list_scenes[i:i + WORKERS] 
-        # Use concurrent downloading
-        with concurrent.futures.ThreadPoolExecutor(max_workers=4) as executor:
-            futures = [executor.submit(download_single_image, scene, headers) for scene in scenes_to_download]
-            concurrent.futures.wait(futures)
+        download_single_image(scene, headers)
 
     date = datetime.now()
     print("Completed all downloads: " + str(date))
@@ -109,4 +102,3 @@ def main():
 
 if __name__ == "__main__":
     main()
-

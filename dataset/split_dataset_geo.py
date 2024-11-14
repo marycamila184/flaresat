@@ -22,9 +22,12 @@ PATH_URBAN_MASKS = '/home/marycamila/flaresat/dataset/urban_areas_mask_patches'
 
 PATH_CSV_ACTIVE_FIRE = '/home/marycamila/flaresat/source/landsat_scenes/2019/active_fire'
 PATH_CSV_POINTS = '/home/marycamila/flaresat/source/csv_points/gas_flaring_points.csv'
+PATH_CSV_URBAN = '/home/marycamila/flaresat/source/urban_areas/patchs_urban_areas_fire.csv'
 
-TRAIN_RATIO = 0.70
+TRAIN_RATIO = 0.65
 TEST_RATIO = 0.30
+VAL_RATIO = 0.15
+
 RANDOM_STATE = 123
 np.random.seed(RANDOM_STATE)
 
@@ -92,11 +95,6 @@ df_test_patches = df_test_patches[["entity_id_sat", "row_index", "col_index"]].c
 
 # ---- TEST PATCHES
 
-# Test list image for future comparison.
-# list_test_images = df_test_patches["entity_id_sat"].unique()
-# df_test_images = pd.DataFrame(list_test_images, columns=["entity_id_test"])
-# df_test_images.to_csv(os.path.join(PATH_DATASET, 'entity_id_test.csv'), index=False)
-
 df_test_patches["tiff_file"] = "fire_" + df_test_patches["entity_id_sat"] + "_" + df_test_patches["row_index"] + "_" + df_test_patches["col_index"] + "_patch.tiff"
 df_test_patches["mask_file"] = "fire_" + df_test_patches["entity_id_sat"] + "_" + df_test_patches["row_index"] + "_" + df_test_patches["col_index"] + "_mask.tiff"
 
@@ -116,10 +114,11 @@ df_train_patches["mask_file"] = "fire_" + df_train_patches["entity_id_sat"] + "_
 df_train_patches["tiff_file"] = df_train_patches["tiff_file"].apply(lambda x: os.path.join(PATH_FLARE_PATCHES, x))
 df_train_patches["mask_file"] = df_train_patches["mask_file"].apply(lambda x: os.path.join(PATH_FLARE_MASKS, x))
 
-df_train_patches, df_val_patches = train_test_split(df_train_patches, test_size=0.15, random_state=RANDOM_STATE)
+df_train_patches, df_val_patches = train_test_split(df_train_patches, test_size=VAL_RATIO, random_state=RANDOM_STATE)
 
 x_train = df_train_patches[['tiff_file']]
 y_train = df_train_patches[['mask_file']]
+
 x_val = df_val_patches[['tiff_file']]
 y_val = df_val_patches[['mask_file']]
 
@@ -155,32 +154,65 @@ y_test_volcano = df_volcanoes[['mask_file']]
 
 # ---- URBAN AREAS DATASET
 
-# ler o df das cenas com os pontos 
-# agrupar por cidade
-# pegar a lista e fazer um split pensando no numero final de imagens
-# split de treino, validacao e teste
+df_urban = pd.read_csv(PATH_CSV_URBAN)
 
 list_urban_patches = os.listdir(PATH_URBAN_PATCHES)
-list_urban = []
 
-for patch_urban in list_urban_patches:
-    path = os.path.join(PATH_URBAN_PATCHES, patch_urban)
-    mask_filename = patch_urban.replace("patch.tiff", "mask.tiff")
-    mask = os.path.join(PATH_URBAN_MASKS, mask_filename)
-    new_row = {"tiff_file": path, "mask_file": mask}
-    list_urban.append(new_row)
+df_urban_grouped = df_urban.groupby(["city"]).size().reset_index(name='count')
 
-df_urban_areas = pd.DataFrame(list_urban)
-x_test_urban = df_urban_areas[['tiff_file']]
-y_test_urban = df_urban_areas[['mask_file']]
+train_groups, test_val_groups = train_test_split(df_urban_grouped, test_size=TEST_RATIO + VAL_RATIO, random_state=42)
+val_groups, test_groups = train_test_split(test_val_groups, test_size=TEST_RATIO / (TEST_RATIO + VAL_RATIO), random_state=42)
+
+train_patches = df_urban[df_urban[["city"]].apply(tuple, axis=1).isin(
+    train_groups[["city"]].apply(tuple, axis=1)
+)]
+val_patches = df_urban[df_urban[["city"]].apply(tuple, axis=1).isin(
+    val_groups[["city"]].apply(tuple, axis=1)
+)]
+test_patches = df_urban[df_urban[["city"]].apply(tuple, axis=1).isin(
+    test_groups[["city"]].apply(tuple, axis=1)
+)]
+
+list_train = []
+list_val = []
+list_test = []
+
+def add_to_list(patches, data_list):
+    for _, row_urban in patches.iterrows():
+        entity_id = str(row_urban["entity_id_sat"])
+        city = str(row_urban["city"])
+        index_patch = str(row_urban["index_patch"])
+
+        patch_urban = f'urban_{entity_id}_{city}_{index_patch}_patch.tiff'
+        path = os.path.join(PATH_URBAN_PATCHES, patch_urban)
+
+        mask_filename = patch_urban.replace("patch.tiff", "mask.tiff")
+        mask = os.path.join(PATH_URBAN_MASKS, mask_filename)
+
+        data_list.append({"tiff_file": path, "mask_file": mask})
+
+add_to_list(train_patches, list_train)
+add_to_list(val_patches, list_val)
+add_to_list(test_patches, list_test)
+
+df_train_urban = pd.DataFrame(list_train)
+df_val_urban = pd.DataFrame(list_val)
+df_test_urban = pd.DataFrame(list_test)
+
+x_train_urban = df_train_urban[['tiff_file']]
+y_train_urban = df_train_urban[['mask_file']]
+x_val_urban = df_val_urban[['tiff_file']]
+y_val_urban = df_val_urban[['mask_file']]
+x_test_urban = df_test_urban[['tiff_file']]
+y_test_urban = df_test_urban[['mask_file']]
 
 # ---- MERGE FLARE, FIRE AND VOLCANOES DATASETS
 
-x_train = pd.concat([x_train, x_train_fire])
-y_train = pd.concat([y_train, y_train_fire])
+x_train = pd.concat([x_train, x_train_fire, x_train_urban])
+y_train = pd.concat([y_train, y_train_fire, y_train_urban])
 
-x_val = pd.concat([x_val, x_val_fire])
-y_val = pd.concat([y_val, y_val_fire])
+x_val = pd.concat([x_val, x_val_fire, x_val_urban])
+y_val = pd.concat([y_val, y_val_fire, y_val_urban])
 
 x_test = pd.concat([x_test, x_test_fire, x_test_volcano, x_test_urban])
 y_test = pd.concat([y_test, y_test_fire, y_test_volcano, y_test_urban])

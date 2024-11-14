@@ -38,12 +38,12 @@ WEIGHTS_ACTIVE_FIRE_PATH = '/home/marycamila/flaresat/results_comparison/source/
 THRESHOLD_ACTIVE_FIRE = 0.25
 
 #Flaresat
-N_CHANNELS = 3
-BANDS = [1,5,6]
-DICT_CHANNELS = (1,5,6)
+N_CHANNELS = 10
+BANDS = []
+DICT_CHANNELS = ()
 IMAGE_SIZE=(256,256)
 
-MODEL_PATH = "/home/marycamila/flaresat/train/train_output/attention_unet/flaresat-3c-267b-32f-16bs.hdf5"
+MODEL_PATH = "/home/marycamila/flaresat/train/train_output/unet/flaresat-10c-32f-16bs.hdf5"
 THRESHOLD_FLARESAT = 0.50
 
 images_test = pd.read_csv('/home/marycamila/flaresat/dataset/images_test.csv')
@@ -68,7 +68,7 @@ def conv2d_block(input_tensor, n_filters, kernel_size=3, batchnorm=True):
 
 
 def get_unet(input_height=256, input_width=256, n_filters=16, dropout=0.1, batchnorm=True):
-    input_img = Input(shape=(input_height, input_width, N_CHANNELS))
+    input_img = Input(shape=(input_height, input_width, N_CHANNELS_ACTIVE_FIRE))
 
     # contracting path
     c1 = conv2d_block(input_img, n_filters=n_filters*1,
@@ -143,8 +143,8 @@ y_pred_flat = method_masks_binary.flatten()
 # get_metrics_results(y_pred_flat, y_test_flat)
 
 #Flaresat Model
-#model = unet_model(input_size=(IMAGE_SIZE[0], IMAGE_SIZE[1], N_CHANNELS))
-model = unet_attention_model(input_size=(IMAGE_SIZE[0], IMAGE_SIZE[1], N_CHANNELS))
+model = unet_model(input_size=(IMAGE_SIZE[0], IMAGE_SIZE[1], N_CHANNELS))
+#model = unet_attention_model(input_size=(IMAGE_SIZE[0], IMAGE_SIZE[1], N_CHANNELS))
 #model = unet_sentinel_landcover(input_size=(IMAGE_SIZE[0], IMAGE_SIZE[1], N_CHANNELS), dict_channels=DICT_CHANNELS)
 #model = unet_attention_sentinel_landcover(input_size=(IMAGE_SIZE[0], IMAGE_SIZE[1], N_CHANNELS), dict_channels=DICT_CHANNELS)
 model.load_weights(MODEL_PATH)

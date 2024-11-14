@@ -30,9 +30,10 @@ EPOCHS = 150
 
 IMAGE_SIZE = (256, 256)
 
-N_CHANNELS = 10
-BANDS = []
-DICT_CHANNELS = ()
+N_CHANNELS = 4
+BANDS = [3,4,5,6]
+DICT_CHANNELS = (3,4,5,6)
+
 BATCH_SIZE = 16
 
 RANDOM_STATE = 42
@@ -43,7 +44,6 @@ masks_train = pd.read_csv('/home/marycamila/flaresat/dataset/masks_train.csv')['
 images_validation = pd.read_csv('/home/marycamila/flaresat/dataset/images_val.csv')['tiff_file']
 masks_validation = pd.read_csv('/home/marycamila/flaresat/dataset/masks_val.csv')['mask_file']
 
-# Create instances of the custom data generator
 train_generator = ImageMaskGenerator(
     image_list=images_train,
     bands=BANDS,
@@ -82,7 +82,7 @@ checkpoint = ModelCheckpoint(
     save_freq='epoch'
 )
 
-print('FlareSat - Train initiated')
+print('Flaresat - Train initiated')
 
 history = model.fit(
         train_generator,
@@ -92,17 +92,17 @@ history = model.fit(
         callbacks=[checkpoint]
 )
 
-print('FlareSat - Train finished!')
+print('Flaresat - Train finished!')
 
 #Plot the model training history
-plt.plot(history.history['accuracy'], label='training')
-plt.plot(history.history['val_accuracy'], label='validation')
-plt.legend()
-plt.grid()
-plt.xlabel('Epochs')
-plt.ylabel('Accuracy')
-plt.savefig(os.path.join(OUTPUT_DIR, "accuracy.png"), dpi=300, bbox_inches='tight')
-plt.clf()
+# plt.plot(history.history['accuracy'], label='training')
+# plt.plot(history.history['val_accuracy'], label='validation')
+# plt.legend()
+# plt.grid()
+# plt.xlabel('Epochs')
+# plt.ylabel('Accuracy')
+# plt.savefig(os.path.join(OUTPUT_DIR, "accuracy.png"), dpi=300, bbox_inches='tight')
+# plt.clf()
     
 plt.plot(history.history['loss'], label='training')
 plt.plot(history.history['val_loss'], label='validation')
