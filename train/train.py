@@ -30,9 +30,9 @@ EPOCHS = 150
 
 IMAGE_SIZE = (256, 256)
 
-N_CHANNELS = 4
-BANDS = [3,4,5,6]
-DICT_CHANNELS = (3,4,5,6)
+N_CHANNELS = 3
+BANDS = [4,5,6]
+DICT_CHANNELS = (4,5,6)
 
 BATCH_SIZE = 16
 
@@ -94,16 +94,7 @@ history = model.fit(
 
 print('Flaresat - Train finished!')
 
-#Plot the model training history
-# plt.plot(history.history['accuracy'], label='training')
-# plt.plot(history.history['val_accuracy'], label='validation')
-# plt.legend()
-# plt.grid()
-# plt.xlabel('Epochs')
-# plt.ylabel('Accuracy')
-# plt.savefig(os.path.join(OUTPUT_DIR, "accuracy.png"), dpi=300, bbox_inches='tight')
-# plt.clf()
-    
+   
 plt.plot(history.history['loss'], label='training')
 plt.plot(history.history['val_loss'], label='validation')
 plt.legend()

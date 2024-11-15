@@ -8,6 +8,7 @@ from tensorflow.keras.optimizers import Adam
 LEARNING_RATE = 0.0005
 MASK_CHANNELS = 1
 
+
 class ResizeLayer(Layer):
     def __init__(self):
         super(ResizeLayer, self).__init__()

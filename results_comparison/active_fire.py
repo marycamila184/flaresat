@@ -38,12 +38,13 @@ WEIGHTS_ACTIVE_FIRE_PATH = '/home/marycamila/flaresat/results_comparison/source/
 THRESHOLD_ACTIVE_FIRE = 0.25
 
 #Flaresat
-N_CHANNELS = 10
-BANDS = []
-DICT_CHANNELS = ()
+N_CHANNELS = 3
+BANDS = [1,5,6]
+DICT_CHANNELS = (1,5,6)
+
 IMAGE_SIZE=(256,256)
 
-MODEL_PATH = "/home/marycamila/flaresat/train/train_output/unet/flaresat-10c-32f-16bs.hdf5"
+MODEL_PATH = "/home/marycamila/flaresat/train/train_output/transfer_learning_attention/unet-3c-267b-flaresat.weights.h5"
 THRESHOLD_FLARESAT = 0.50
 
 images_test = pd.read_csv('/home/marycamila/flaresat/dataset/images_test.csv')
@@ -143,10 +144,10 @@ y_pred_flat = method_masks_binary.flatten()
 # get_metrics_results(y_pred_flat, y_test_flat)
 
 #Flaresat Model
-model = unet_model(input_size=(IMAGE_SIZE[0], IMAGE_SIZE[1], N_CHANNELS))
+#model = unet_model(input_size=(IMAGE_SIZE[0], IMAGE_SIZE[1], N_CHANNELS))
 #model = unet_attention_model(input_size=(IMAGE_SIZE[0], IMAGE_SIZE[1], N_CHANNELS))
 #model = unet_sentinel_landcover(input_size=(IMAGE_SIZE[0], IMAGE_SIZE[1], N_CHANNELS), dict_channels=DICT_CHANNELS)
-#model = unet_attention_sentinel_landcover(input_size=(IMAGE_SIZE[0], IMAGE_SIZE[1], N_CHANNELS), dict_channels=DICT_CHANNELS)
+model = unet_attention_sentinel_landcover(input_size=(IMAGE_SIZE[0], IMAGE_SIZE[1], N_CHANNELS), dict_channels=DICT_CHANNELS)
 model.load_weights(MODEL_PATH)
 
 truth_patches_flare = np.array([load_patch(path, n_channels=N_CHANNELS, bands=BANDS) for path in images_test['tiff_file']])
@@ -155,6 +156,6 @@ y_pred_thresholded = np.where(y_pred > THRESHOLD_FLARESAT, 1, 0)
 y_pred_flatten = y_pred_thresholded.flatten()
 flaresat_output = (y_pred_thresholded * 255).astype(np.uint8)
 
-get_metrics_results(y_pred_flatten, y_test_flat)
+#get_metrics_results(y_pred_flatten, y_test_flat)
 
 plot_inferences(truth_masks, method_masks_binary, truth_patches_flare, flaresat_output, OUTPUT_PATH, 2, list_entities_plot=[], method="af", n_images=len(truth_masks), cloud_masks=[])

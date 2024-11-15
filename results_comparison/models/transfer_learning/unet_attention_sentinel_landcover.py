@@ -3,13 +3,24 @@ from models.transfer_learning.builder import unet_builder
 from tensorflow.keras.initializers import HeNormal
 from tensorflow.keras.optimizers import Adam
 from tensorflow.keras import layers, Model
+from tensorflow.keras.layers import Layer
 import tensorflow as tf
 
 LEARNING_RATE = 0.001
 MASK_CHANNELS = 1
 
+class ResizeLayer(Layer):
+    def __init__(self):
+        super(ResizeLayer, self).__init__()
+
+    def call(self, inputs):
+        size = (tf.shape(inputs)[1], tf.shape(inputs)[2])
+        return tf.image.resize(inputs, size=size)
+    
 
 def attention_block(g, x, num_filters):
+    resize_layer = ResizeLayer()
+    
     theta_x = layers.Conv2D(num_filters, (1, 1), strides=(1, 1), padding='same')(x)
     phi_g = layers.Conv2D(num_filters, (1, 1), strides=(1, 1), padding='same')(g)
 
@@ -19,9 +30,8 @@ def attention_block(g, x, num_filters):
     psi = layers.Conv2D(1, (1, 1), strides=(1, 1), padding='same')(relu)
     sigmoid = layers.Activation('sigmoid')(psi)
     
-    upsampled_sigmoid = tf.image.resize(sigmoid, size=(tf.shape(x)[1], tf.shape(x)[2])) 
+    upsampled_sigmoid = resize_layer(sigmoid)
     attention = layers.multiply([x, upsampled_sigmoid])
-
     return attention
 
 
@@ -87,14 +97,15 @@ def unet_attention_sentinel_landcover(input_size, dict_channels=None, seed=42):
 
     x = inputs
 
-    for layer in new_model.layers:
-        if 'concatenate' not in layer.name:
+    for layer in new_model.layers:        
+        if 'concatenate' not in layer.name and 'input_layer' not in layer.name:
             if layer.name in encoder_outputs:            
                 skip_connection = encoder_outputs[layer.name]
-                attended_skip = attention_block(layer.output, skip_connection, num_filters=layer.output.shape[-1])                
-            x = layer(x)
-        else:
-            x = layers.Concatenate()([attended_skip, x])
+                attended_skip = attention_block(layer.output, skip_connection, num_filters=layer.output.shape[-1])
+                x = layer(x)
+                x = layers.Concatenate()([attended_skip, x])
+            else:
+                x = layer(x)
 
     new_model = Model(inputs=inputs, outputs=x)
     new_model.compile(optimizer=Adam(learning_rate=LEARNING_RATE), loss='binary_focal_crossentropy', metrics=['accuracy'])

@@ -17,9 +17,9 @@ os.environ["CUDA_VISIBLE_DEVICES"] = str(CUDA_DEVICE)
 MODEL_PATH = '/home/marycamila/flaresat/train/train_output/flaresat.weights.h5'
 THRESHOLD = 0.50
 
-N_CHANNELS = 4
-BANDS = [3,4,5,6]
-DICT_CHANNELS = (3,4,5,6)
+N_CHANNELS = 3
+BANDS = [4,5,6]
+DICT_CHANNELS = (4,5,6)
 
 IMAGE_SIZE=(256,256)
 
@@ -32,8 +32,8 @@ test_masks = np.array([processing.load_mask(path) for path in masks_test['mask_f
 
 #model = unet_model(input_size=(IMAGE_SIZE[0], IMAGE_SIZE[1], N_CHANNELS))
 #model = unet_attention_model(input_size=(IMAGE_SIZE[0], IMAGE_SIZE[1], N_CHANNELS))
-model = unet_sentinel_landcover(input_size=(IMAGE_SIZE[0], IMAGE_SIZE[1], N_CHANNELS), dict_channels=DICT_CHANNELS)
-#model = unet_attention_sentinel_landcover(input_size=(IMAGE_SIZE[0], IMAGE_SIZE[1], N_CHANNELS), dict_channels=DICT_CHANNELS)
+#model = unet_sentinel_landcover(input_size=(IMAGE_SIZE[0], IMAGE_SIZE[1], N_CHANNELS), dict_channels=DICT_CHANNELS)
+model = unet_attention_sentinel_landcover(input_size=(IMAGE_SIZE[0], IMAGE_SIZE[1], N_CHANNELS), dict_channels=DICT_CHANNELS)
 model.load_weights(MODEL_PATH)
 
 y_pred = model.predict(test_images)
