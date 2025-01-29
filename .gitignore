@@ -1,0 +1,32 @@
+# Ignore image files
+*.tiff
+*.tif
+*.TIF
+*.png
+*.jpg
+*.jpeg
+*.gif
+
+# Ignore Python cache files
+__pycache__/
+
+# Ignore virtual environment
+venv/
+env/
+flaresat/*
+
+# Ignore model and dataset files
+*.h5
+*.hdf5
+*.pth
+*.csv
+*.gz
+*.txt
+*.tar
+*.zip
+*.json
+*.xml
+
+# Ignore temporary files and logs
+*.log
+.DS_Store  # For macOS users
