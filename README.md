@@ -3,7 +3,7 @@
 ## Introduction
 
 <p align="center">
-  <img src="assets/gas_flare_araucaria.png" alt="Gas Flare" width="90%">
+  <img src="assets/gas_flare_araucaria.png" alt="Gas Flare" width="100%">
   <br>
   <em>Gas flare example from the Araucaria facility.</em>
 </p>
@@ -13,7 +13,7 @@
 To address this gap, FlareSat introduces a specialized dataset consisting of **7,337 labeled image patches** (256 × 256 pixels) representing **5,508 facilities across 94 countries**, covering both onshore and offshore production sites. To improve robustness, the dataset also includes visually similar sources—**wildfires, active volcanoes, and reflective urban areas**—which commonly lead to false positives in flare detection tasks.
 
 <p align="center">
-  <img src="assets/active_fire_1.png" alt="FlareSat" width="80%">
+  <img src="assets/active_fire_1.png" alt="FlareSat" width="90%">
   <br>
   <em>Example of a flare on Landsat 8. (a) RGB patch; (b) B7 band patch; (c) flare segmented pixels shown in red.</em>
 </p>
