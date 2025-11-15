@@ -171,10 +171,9 @@ For questions, suggestions, or collaboration:
 
 Email: marycamilainfo@gmail.com  
 
-GitHub: https://github.com/marycamila184
-
 Lattes: http://lattes.cnpq.br/0331994522046004 
 
+LinkedIn: https://www.linkedin.com/in/mary-camila-8133aab7/ 
 
 **Ricardo Dutra da Silva**  
 
