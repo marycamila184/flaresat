@@ -2,13 +2,13 @@
 
 ## Introduction
 
+**FlareSat** is a deep-learning semantic segmentation project designed for **gas flare detection** using **Landsat 8 satellite imagery**. Gas flaring plays a safety role in oil and gas operations, but large-scale flaring emits substantial greenhouse gases, making reliable monitoring crucial for assessing and mitigating environmental impact. While satellite imagery provides global, multispectral, and openly accessible data, there is a lack of open datasets and deep-learning resources specifically tailored for gas flare detection.
+
 <p align="center">
   <img src="assets/gas_flare_araucaria.png" alt="Gas Flare" width="100%">
   <br>
   <em>Gas flare example from the Araucaria facility.</em>
 </p>
-
-**FlareSat** is a deep-learning semantic segmentation project designed for **gas flare detection** using **Landsat 8 satellite imagery**. Gas flaring plays a safety role in oil and gas operations, but large-scale flaring emits substantial greenhouse gases, making reliable monitoring crucial for assessing and mitigating environmental impact. While satellite imagery provides global, multispectral, and openly accessible data, there is a lack of open datasets and deep-learning resources specifically tailored for gas flare detection.
 
 To address this gap, FlareSat introduces a specialized dataset consisting of **7,337 labeled image patches** (256 × 256 pixels) representing **5,508 facilities across 94 countries**, covering both onshore and offshore production sites. To improve robustness, the dataset also includes visually similar sources—**wildfires, active volcanoes, and reflective urban areas**—which commonly lead to false positives in flare detection tasks.
 
