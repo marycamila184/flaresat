@@ -168,14 +168,19 @@ Full citation will be added upon publication.]
 For questions, suggestions, or collaboration:
 
 **Osmary (Mary) Camila Bortoncello Glober**  
+
 Email: marycamilainfo@gmail.com  
+
 GitHub: https://github.com/marycamila184
-LinkedIn: https://www.linkedin.com/in/mary-camila-8133aab7/ 
+
+Lattes: http://lattes.cnpq.br/0331994522046004 
+
 
 **Ricardo Dutra da Silva**  
-Email:   
-GitHub: 
 
+Email: rdsilva@utfpr.edu.br
+
+Lattes: http://lattes.cnpq.br/8512085741397097 
 
 ---
 
