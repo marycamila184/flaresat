@@ -2,9 +2,6 @@
 *.tiff
 *.tif
 *.TIF
-*.png
-*.jpg
-*.jpeg
 *.gif
 
 # Ignore Python cache files
