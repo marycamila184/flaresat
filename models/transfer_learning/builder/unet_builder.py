@@ -76,8 +76,6 @@ def to_tuple(x):
             return x
     elif np.isscalar(x):
 	    return (x, x)
-    
-    raise ValueError('Value should be tuple of length 2 or int value, got "{}"'.format(x))
 
 
 def get_layer_number(model, layer_name):

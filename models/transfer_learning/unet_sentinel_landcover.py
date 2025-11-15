@@ -4,9 +4,25 @@ from tensorflow.keras.initializers import HeNormal
 from tensorflow.keras.optimizers import Adam
 from tensorflow.keras import layers, Model
 import tensorflow as tf
+from tensorflow.keras import backend as K
 
 LEARNING_RATE = 0.001
 MASK_CHANNELS = 1
+THRESHOLD = 0.5
+
+def f1_score(y_true, y_pred):
+    y_pred_thresholded = tf.where(y_pred >= THRESHOLD, 1.0, 0.0)
+
+    tp = K.sum(K.cast(y_true * y_pred_thresholded, 'float'), axis=[1, 2, 3])
+    fp = K.sum(K.cast((1 - y_true) * y_pred_thresholded, 'float'), axis=[1, 2, 3])
+    fn = K.sum(K.cast(y_true * (1 - y_pred_thresholded), 'float'), axis=[1, 2, 3])
+
+    precision = tp / (tp + fp + K.epsilon())
+    recall = tp / (tp + fn + K.epsilon())
+    
+    f1 = 2 * precision * recall / (precision + recall + K.epsilon())
+    return K.mean(f1)
+
 
 def unet_sentinel_landcover(input_size, dict_channels=None, seed=42):
     n_channels = input_size[2]
@@ -16,7 +32,7 @@ def unet_sentinel_landcover(input_size, dict_channels=None, seed=42):
     # https://jyx.jyu.fi/handle/123456789/60705
     # Land cover classification from multispectral data using convolutional autoencoder networks
     existing_model = unet_builder.build_unet(14, 13, activation='softmax')  # Original model - 13 classes
-    existing_model.load_weights('/home/marycamila/flaresat/train/models/transfer_learning/models/unet-sentinel-landcover-14c.h5')
+    existing_model.load_weights('/home/mary-camila/Downloads/flaresat-full/train/models/transfer_learning/models/unet-sentinel-landcover-14c.h5')
     existing_weights = existing_model.get_weights()
 
     # Mapping Sentinel-2 bands to Landsat 8 bands
@@ -62,6 +78,11 @@ def unet_sentinel_landcover(input_size, dict_channels=None, seed=42):
     existing_weights[-1] = np.zeros(new_output_bias_shape)
 
     new_model.set_weights(existing_weights)
-    new_model.compile(optimizer=Adam(learning_rate=LEARNING_RATE), loss='binary_focal_crossentropy', metrics=['accuracy'])
+    new_model.compile(optimizer=Adam(learning_rate=LEARNING_RATE), loss='binary_focal_crossentropy', 
+                      metrics=[
+                          tf.keras.metrics.Precision(thresholds=THRESHOLD), 
+                          tf.keras.metrics.Recall(thresholds=THRESHOLD), 
+                          f1_score,
+                        ])
 
     return new_model

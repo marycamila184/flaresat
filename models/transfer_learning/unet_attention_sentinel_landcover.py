@@ -4,10 +4,25 @@ from tensorflow.keras.initializers import HeNormal
 from tensorflow.keras.optimizers import Adam
 from tensorflow.keras import layers, Model
 from tensorflow.keras.layers import Layer
+
 import tensorflow as tf
+from tensorflow.keras import backend as K
 
 LEARNING_RATE = 0.001
 MASK_CHANNELS = 1
+
+
+def f1_score(y_true, y_pred):
+    y_pred = tf.round(y_pred)
+    tp = K.sum(K.cast(y_true * y_pred, 'float'), axis=[1, 2, 3])
+    fp = K.sum(K.cast((1 - y_true) * y_pred, 'float'), axis=[1, 2, 3])
+    fn = K.sum(K.cast(y_true * (1 - y_pred), 'float'), axis=[1, 2, 3])
+
+    precision = tp / (tp + fp + K.epsilon())
+    recall = tp / (tp + fn + K.epsilon())
+    f1 = 2 * precision * recall / (precision + recall + K.epsilon())
+    return K.mean(f1)
+
 
 class ResizeLayer(Layer):
     def __init__(self):
@@ -40,7 +55,7 @@ def unet_attention_sentinel_landcover(input_size, dict_channels=None, seed=42):
     new_model = unet_builder.build_unet(n_channels, MASK_CHANNELS, activation='sigmoid')  # Flare binary output
 
     existing_model = unet_builder.build_unet(14, 13, activation='softmax')  # Original model - 13 classes
-    existing_model.load_weights('/home/marycamila/flaresat/train/models/transfer_learning/models/unet-sentinel-landcover-14c.h5')
+    existing_model.load_weights('/home/mary-camila/Downloads/flaresat-full/train/models/transfer_learning/models/unet-sentinel-landcover-14c.h5')
     existing_weights = existing_model.get_weights()
 
     # Mapping Sentinel-2 bands to Landsat 8 bands
@@ -108,6 +123,6 @@ def unet_attention_sentinel_landcover(input_size, dict_channels=None, seed=42):
                 x = layer(x)
 
     new_model = Model(inputs=inputs, outputs=x)
-    new_model.compile(optimizer=Adam(learning_rate=LEARNING_RATE), loss='binary_focal_crossentropy', metrics=['accuracy'])
+    new_model.compile(optimizer=Adam(learning_rate=LEARNING_RATE), loss='binary_focal_crossentropy', metrics=[tf.keras.metrics.Precision(), tf.keras.metrics.Recall(), f1_score])
 
     return new_model

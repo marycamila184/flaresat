@@ -16,10 +16,10 @@ env/
 flaresat/*
 
 # Ignore model and dataset files
+*.keras
 *.h5
 *.hdf5
 *.pth
-*.csv
 *.gz
 *.txt
 *.tar
