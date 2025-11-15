@@ -89,7 +89,7 @@ pip install -r requirements.txt
 
 For the complete methodology used to build the dataset, please refer to the paper. Download the dataset structure from Zenodo:
 
-- **Landsat 8 dataset** (available on Zenodo: https://zenodo.org)
+- **FlareSat dataset** (available on Zenodo: https://zenodo.org/records/17619196)
 
 Place the images under each folder following the same structure described below.
 
@@ -99,7 +99,7 @@ Masks contain the segmentation labels in shape **(256, 256, 1)**:
 
 - `dataset/fire_masks`
 - `dataset/flare_masks`
-- `dataset/urban_areas_masks`
+- `dataset/urban_masks`
 
 ### Patches
 
@@ -107,7 +107,7 @@ Patches contain the model input tensors in shape **(256, 256, 10)**:
 
 - `dataset/fire_patches`
 - `dataset/flare_patches`
-- `dataset/urban_areas_patches`
+- `dataset/urban_patches`
 
 ### CSV Files
 
