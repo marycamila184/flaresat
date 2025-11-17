@@ -5,10 +5,10 @@ import tensorflow as tf
 from keras.callbacks import ModelCheckpoint
 from sklearn.model_selection import train_test_split
 
-from models.transfer_learning.unet_attention_sentinel_landcover import unet_attention_sentinel_landcover
-from models.transfer_learning.unet_sentinel_landcover import unet_sentinel_landcover
-from models.attention_unet import unet_attention_model
 from models.unet import unet_model
+from models.attention_unet import unet_attention_model
+from models.transfer_learning.unet_sentinel_landcover import unet_sentinel_landcover
+from models.transfer_learning.unet_attention_sentinel_landcover import unet_attention_sentinel_landcover
 
 from train.utils.cross_split import create_folds
 from train.utils.generator import *
@@ -18,6 +18,7 @@ os.environ["CUDA_VISIBLE_DEVICES"] = str(CUDA_DEVICE)
 
 # Check GPU availability and configure memory growth
 gpus = tf.config.list_physical_devices('GPU')
+
 if gpus:
     try:
         for gpu in gpus:
@@ -35,9 +36,9 @@ OUTPUT_DIR = 'train/train_output/cross_validation'
 
 NUM_FOLDS = 4
 
-flare_patches = pd.read_csv('dataset/flare_patches.csv')
-urban_patches = pd.read_csv('dataset/urban_patches.csv')
-wildfire_patches = pd.read_csv('dataset/fire_patches.csv')
+flare_patches = pd.read_csv('dataset/flare_dataset.csv')
+urban_patches = pd.read_csv('dataset/urban_dataset.csv')
+wildfire_patches = pd.read_csv('dataset/fire_dataset.csv')
 
 images_flare, images_urban, images_wildfire = create_folds(flare_patches, urban_patches, wildfire_patches)
 
@@ -46,7 +47,7 @@ dict_channels = [(1,5,6), (4,5,6), (3,4,5,6), ()]
 
 for model_name in list_models:
     for dict_bands in dict_channels:
-        for fold in NUM_FOLDS:
+        for fold in range(NUM_FOLDS):
 
             print(f"\n--- Fold {fold + 1} ---")
 
@@ -134,8 +135,11 @@ for model_name in list_models:
             )
 
             history_df = pd.DataFrame(history.history)
-            history_df['fold'] = fold
-            history_df.to_csv(os.path.join(OUTPUT_DIR, f"history_fold_{fold+1}_{checkpoint_model_name}.csv"), index=False)
+            history_df['fold'] = fold + 1
+
+            output_history = os.path.join(OUTPUT_DIR, model_name, str(fold + 1))
+            history_csv_path = os.path.join(output_history, f"history_fold_{fold+1}_{checkpoint_model_name}.csv")
+            history_df.to_csv(history_csv_path, index=False)
 
             best_epoch = history_df['val_f1_score'].idxmax()
             best_metrics = history_df.loc[best_epoch]
@@ -150,8 +154,9 @@ for model_name in list_models:
 
             summary_df = pd.DataFrame([summary])
 
-            summary_file = os.path.join(OUTPUT_DIR, f"summary_all_folds_{checkpoint_model_name}.csv")
-            summary_df.to_csv(summary_file, mode='a', header=not os.path.exists(summary_file), index=False)
+            output_summary = os.path.join(OUTPUT_DIR, model_name)
+            summary_csv_path = os.path.join(output_summary, f"summary_all_folds_{checkpoint_model_name}.csv")
+            summary_df.to_csv(summary_csv_path, mode='a', header=not os.path.exists(summary_csv_path), index=False)
 
 
             

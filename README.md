@@ -83,6 +83,11 @@ venv\Scripts\activate
 pip install -r requirements.txt
 ```
 
+### 4. **Install the project in editable mode**
+```bash
+pip install -e .
+```
+
 ---
 
 ## Dataset

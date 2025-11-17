@@ -17,6 +17,7 @@ os.environ["CUDA_VISIBLE_DEVICES"] = str(CUDA_DEVICE)
 THRESHOLD = 0.50
 
 NUM_FOLDS = 4
+OUTPUT_DIR = 'train/train_output/cross_validation'
 
 IMAGE_SIZE=(256,256)
 
@@ -37,9 +38,9 @@ channels_readable = {
     '10': '1 a 10'
 }
 
-flare_patches = pd.read_csv('dataset/flare_patches.csv')
-urban_patches = pd.read_csv('dataset/urban_patches.csv')
-wildfire_patches = pd.read_csv('dataset/fire_patches.csv')
+flare_patches = pd.read_csv('dataset/flare_dataset.csv')
+urban_patches = pd.read_csv('dataset/urban_dataset.csv')
+wildfire_patches = pd.read_csv('dataset/fire_dataset.csv')
 
 images_flare, images_urban, images_wildfire = create_folds(flare_patches, urban_patches, wildfire_patches)
 
@@ -66,8 +67,6 @@ for model_name in list_models:
         for fold in range(NUM_FOLDS):
             print(f"---- Model: {model_name}, Channels: {bands} - Fold: {fold + 1}")
             
-            path = f'train/train_output/cross_validation_split/{model_name}/fold_{fold+1}/fold_{fold+1}_{model_name}_b{path_channels[index]}.keras'
-
             if model_name == 'unet':
                 model_instance = unet_model(input_size=(IMAGE_SIZE[0], IMAGE_SIZE[1], channels))
             elif model_name == 'unet_attention':
@@ -77,6 +76,8 @@ for model_name in list_models:
             else:
                 model_instance = unet_attention_sentinel_landcover(input_size=(IMAGE_SIZE[0], IMAGE_SIZE[1], channels), dict_channels=dict_channels[index])
 
+            file_name = f"fold_{fold + 1}_{model_name}_b{path_channels[index]}.keras"
+            path = os.path.join(OUTPUT_DIR, model_name, f"fold_{fold + 1}", file_name)
             model_instance.load_weights(path)
 
             flare_patches = images_flare[images_flare['fold'] == fold]['tiff_file']
@@ -123,5 +124,5 @@ for i in range(1, NUM_FOLDS + 1):
 
 df = df[columns]
 
-df.to_csv('cross_train_results.csv', index=False)
-print("Results saved to 'model_results_summary.csv'")
+evaluation_path = os.path.join(OUTPUT_DIR, 'cross_train_results.csv')
+df.to_csv(evaluation_path, index=False)

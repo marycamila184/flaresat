@@ -6,7 +6,9 @@ import tensorflow as tf
 import numpy as np
 
 from models.transfer_learning.builder import unet_builder
-from models.transfer_learning.unet_attention_sentinel_landcover import f1_score
+
+from models.utils.attention_resize_layer import ResizeLayer
+from models.utils.metrics import f1_score
 
 
 LEARNING_RATE = 0.001

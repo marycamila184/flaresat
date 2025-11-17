@@ -6,11 +6,11 @@
 
 # Ignore Python cache files
 __pycache__/
+flaresat.egg-info
 
 # Ignore virtual environment
 venv/
 env/
-flaresat/*
 
 # Ignore model and dataset files
 *.keras

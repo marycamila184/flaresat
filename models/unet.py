@@ -4,7 +4,7 @@ from keras.layers import Input
 from tensorflow.keras import layers
 from tensorflow.keras.optimizers import Adam
 
-from models.transfer_learning.unet_attention_sentinel_landcover import f1_score
+from models.utils.metrics import f1_score
 
 LEARNING_RATE = 0.001
 MASK_CHANNELS = 1
