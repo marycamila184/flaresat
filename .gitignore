@@ -18,7 +18,6 @@ env/
 *.hdf5
 *.pth
 *.gz
-*.txt
 *.tar
 *.zip
 *.json
