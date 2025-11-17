@@ -1,4 +1,5 @@
 from sklearn.metrics import precision_score, recall_score, f1_score
+from train.utils.cross_split import create_folds
 import utils.processing as processing
 
 from models.transfer_learning.unet_attention_sentinel_landcover import unet_attention_sentinel_landcover
@@ -36,9 +37,11 @@ channels_readable = {
     '10': '1 a 10'
 }
 
-images_flare = pd.read_csv('/home/mary-camila/Downloads/flaresat-full/dataset/flare_patches.csv')
-images_urban = pd.read_csv('/home/mary-camila/Downloads/flaresat-full/dataset/urban_patches.csv')
-images_fire = pd.read_csv('/home/mary-camila/Downloads/flaresat-full/dataset/fire_patches.csv')
+flare_patches = pd.read_csv('dataset/flare_patches.csv')
+urban_patches = pd.read_csv('dataset/urban_patches.csv')
+wildfire_patches = pd.read_csv('dataset/fire_patches.csv')
+
+images_flare, images_urban, images_wildfire = create_folds(flare_patches, urban_patches, wildfire_patches)
 
 list_models = ["unet", "unet_attention", "unet_sentinel_landcover", "unet_attention_sentinel_landcover"]
 list_bands = [[1,5,6], [4,5,6], [3,4,5,6], []] 
@@ -63,7 +66,7 @@ for model_name in list_models:
         for fold in range(NUM_FOLDS):
             print(f"---- Model: {model_name}, Channels: {bands} - Fold: {fold + 1}")
             
-            path = f'/home/mary-camila/Downloads/flaresat-full/train/train_output/cross_validation_split/{model_name}/fold_{fold+1}/fold_{fold+1}_{model_name}_b{path_channels[index]}.keras'
+            path = f'train/train_output/cross_validation_split/{model_name}/fold_{fold+1}/fold_{fold+1}_{model_name}_b{path_channels[index]}.keras'
 
             if model_name == 'unet':
                 model_instance = unet_model(input_size=(IMAGE_SIZE[0], IMAGE_SIZE[1], channels))
@@ -82,8 +85,8 @@ for model_name in list_models:
             urban_patches = images_urban[images_urban['fold'] == fold]['tiff_file']
             urban_masks = images_urban[images_urban['fold'] == fold]['mask_file']
 
-            fire_patches = images_fire[images_fire['fold'] == fold]['tiff_file']
-            fire_masks = images_fire[images_fire['fold'] == fold]['mask_file']
+            fire_patches = images_wildfire[images_wildfire['fold'] == fold]['tiff_file']
+            fire_masks = images_wildfire[images_wildfire['fold'] == fold]['mask_file']
 
             all_patches = pd.concat([flare_patches, urban_patches, fire_patches]).tolist()
             all_masks = pd.concat([flare_masks, urban_masks, fire_masks]).tolist()
@@ -105,7 +108,6 @@ for model_name in list_models:
             union = np.logical_or(y_test_flat, y_pred_flat)
             iou = np.sum(intersection) / np.sum(union)
 
-            # Add to row
             suffix = f'({fold+1})'
             row[f'F1 - {suffix}'] = round(f1, 4)
             row[f'P - {suffix}'] = round(precision, 4)

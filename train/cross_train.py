@@ -3,7 +3,6 @@ import os
 
 import tensorflow as tf
 from keras.callbacks import ModelCheckpoint
-from tensorflow.keras import backend as K
 from sklearn.model_selection import train_test_split
 
 from models.transfer_learning.unet_attention_sentinel_landcover import unet_attention_sentinel_landcover
@@ -11,6 +10,7 @@ from models.transfer_learning.unet_sentinel_landcover import unet_sentinel_landc
 from models.attention_unet import unet_attention_model
 from models.unet import unet_model
 
+from train.utils.cross_split import create_folds
 from train.utils.generator import *
 
 CUDA_DEVICE = 0
@@ -25,33 +25,34 @@ if gpus:
     except RuntimeError as e:
         print(e)
 
+
 EPOCHS = 100
 IMAGE_SIZE = (256, 256)
 BATCH_SIZE = 16
 
 RANDOM_STATE = 42
-OUTPUT_DIR = '/home/mary-camila/Downloads/flaresat-full/train/train_output/cross_validation'
+OUTPUT_DIR = 'train/train_output/cross_validation'
 
 NUM_FOLDS = 4
 
-images_flare = pd.read_csv('/home/mary-camila/Downloads/flaresat-full/dataset/flare_patches.csv')
-images_urban = pd.read_csv('/home/mary-camila/Downloads/flaresat-full/dataset/urban_patches.csv')
-images_fire = pd.read_csv('/home/mary-camila/Downloads/flaresat-full/dataset/fire_patches.csv')
+flare_patches = pd.read_csv('dataset/flare_patches.csv')
+urban_patches = pd.read_csv('dataset/urban_patches.csv')
+wildfire_patches = pd.read_csv('dataset/fire_patches.csv')
+
+images_flare, images_urban, images_wildfire = create_folds(flare_patches, urban_patches, wildfire_patches)
 
 list_models = ["unet", "unet_attention", "unet_sentinel_landcover", "unet_attention_sentinel_landcover"]
 dict_channels = [(1,5,6), (4,5,6), (3,4,5,6), ()]
 
 for model_name in list_models:
     for dict_bands in dict_channels:
-        ## Start training 
         for fold in NUM_FOLDS:
+
             print(f"\n--- Fold {fold + 1} ---")
 
             train_generator = None
             val_generator = None
             history = None
-
-            K.clear_session()
 
             # Select fold data - FLARE
             flare_patches = images_flare[images_flare['fold'] != fold]['tiff_file']
@@ -61,9 +62,9 @@ for model_name in list_models:
             urban_patches = images_urban[images_urban['fold'] != fold]['tiff_file']
             urban_masks = images_urban[images_urban['fold'] != fold]['mask_file']
 
-            # Select fold data - FIRE
-            fire_patches = images_fire[images_fire['fold'] != fold]['tiff_file']
-            fire_masks = images_fire[images_fire['fold'] != fold]['mask_file']
+            # Select fold data - WILDFIRE
+            fire_patches = images_wildfire[images_wildfire['fold'] != fold]['tiff_file']
+            fire_masks = images_wildfire[images_wildfire['fold'] != fold]['mask_file']
 
             # Combine for training and validation
             all_patches = pd.concat([flare_patches, urban_patches, fire_patches]).tolist()
@@ -139,7 +140,7 @@ for model_name in list_models:
             best_epoch = history_df['val_f1_score'].idxmax()
             best_metrics = history_df.loc[best_epoch]
             summary = {
-                'fold': fold,
+                'fold': fold + 1,
                 'best_epoch': best_epoch,
                 'val_loss': best_metrics['val_loss'],
                 'val_f1': best_metrics['val_f1_score'],        

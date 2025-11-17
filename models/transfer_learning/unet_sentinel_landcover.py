@@ -1,27 +1,14 @@
-import numpy as np
-from models.transfer_learning.builder import unet_builder
 from tensorflow.keras.initializers import HeNormal
 from tensorflow.keras.optimizers import Adam
-from tensorflow.keras import layers, Model
 import tensorflow as tf
-from tensorflow.keras import backend as K
+import numpy as np
+
+from models.transfer_learning.builder import unet_builder
+from models.transfer_learning.unet_attention_sentinel_landcover import f1_score
 
 LEARNING_RATE = 0.001
 MASK_CHANNELS = 1
 THRESHOLD = 0.5
-
-def f1_score(y_true, y_pred):
-    y_pred_thresholded = tf.where(y_pred >= THRESHOLD, 1.0, 0.0)
-
-    tp = K.sum(K.cast(y_true * y_pred_thresholded, 'float'), axis=[1, 2, 3])
-    fp = K.sum(K.cast((1 - y_true) * y_pred_thresholded, 'float'), axis=[1, 2, 3])
-    fn = K.sum(K.cast(y_true * (1 - y_pred_thresholded), 'float'), axis=[1, 2, 3])
-
-    precision = tp / (tp + fp + K.epsilon())
-    recall = tp / (tp + fn + K.epsilon())
-    
-    f1 = 2 * precision * recall / (precision + recall + K.epsilon())
-    return K.mean(f1)
 
 
 def unet_sentinel_landcover(input_size, dict_channels=None, seed=42):

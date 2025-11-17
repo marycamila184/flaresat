@@ -19,8 +19,10 @@ class ImageMaskGenerator(Sequence):
         self.indexes = np.arange(len(image_list))
         self.on_epoch_end()
 
+
     def __len__(self):
         return int(np.floor(len(self.image_list) / self.batch_size))
+
 
     def __getitem__(self, index):
         batch_indexes = self.indexes[index * self.batch_size:(index + 1) * self.batch_size]
@@ -43,12 +45,15 @@ class ImageMaskGenerator(Sequence):
 
         return np.array(images), np.array(masks)
     
+
     def process_image(self, path):
         return processing.load_image(path, self.n_channels, bands=self.bands, target_size=self.target_resize)
 
+
     def process_mask(self, path):
         return processing.load_mask(path, target_size=self.target_resize)
-    
+
+
     def apply_augmentation(self, image, mask):
         if random.random() > 0.5:
             image = np.fliplr(image)
@@ -59,6 +64,7 @@ class ImageMaskGenerator(Sequence):
             mask = np.flipud(mask)
 
         return image, mask
+
 
     def on_epoch_end(self):
         if self.shuffle:

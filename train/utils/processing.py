@@ -2,6 +2,7 @@ import numpy as np
 import tifffile as tiff
 from skimage.transform import resize
 
+
 def load_image(file_path, n_channels, target_size=None, bands=[]):
     img = tiff.imread(file_path)
     img = np.resize(img, (256, 256, 10))
@@ -16,6 +17,7 @@ def load_image(file_path, n_channels, target_size=None, bands=[]):
         img = resize(img, target_shape, preserve_range=True, anti_aliasing=True)
 
     return img
+
 
 def load_mask(file_path, target_size=None, norm=True):
     mask = tiff.imread(file_path)
