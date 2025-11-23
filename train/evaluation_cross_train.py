@@ -42,7 +42,7 @@ flare_patches = pd.read_csv('dataset/flare_dataset.csv')
 urban_patches = pd.read_csv('dataset/urban_dataset.csv')
 wildfire_patches = pd.read_csv('dataset/fire_dataset.csv')
 
-images_flare, images_urban, images_wildfire = create_folds(flare_patches, urban_patches, wildfire_patches)
+images_flare, images_urban, images_wildfire = create_folds(flare_patches, urban_patches, wildfire_patches, NUM_FOLDS)
 
 list_models = ["unet", "unet_attention", "unet_sentinel_landcover", "unet_attention_sentinel_landcover"]
 list_bands = [[1,5,6], [4,5,6], [3,4,5,6], []] 

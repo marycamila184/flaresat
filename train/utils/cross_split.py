@@ -1,7 +1,6 @@
 from sklearn.model_selection import train_test_split
 from sklearn.model_selection import GroupKFold, KFold
 
-NUM_FOLDS = 4
 
 def print_fold_groups(df, group_col, fold_col='fold'):
     print(f"\nFold grouping by '{group_col}':")
@@ -24,7 +23,7 @@ def print_kfolds(images_flare, images_urban, images_fire):
         print(f"Fold {fold}: {count} samples")
 
 
-def create_folds(images_flare, images_urban, images_fire, NUM_FOLDS=5):
+def create_folds(images_flare, images_urban, images_fire, NUM_FOLDS):
     # ---- FLARE (group by continent) ----
     gkf_flare = GroupKFold(n_splits=NUM_FOLDS)
     images_flare = images_flare.copy()
@@ -49,6 +48,6 @@ def create_folds(images_flare, images_urban, images_fire, NUM_FOLDS=5):
     for fold, (_, val_idx) in enumerate(kf_fire.split(images_fire)):
         images_fire.loc[val_idx, 'fold'] = fold
 
-    print_kfolds(images_flare, images_urban, images_fire)
+    # print_kfolds(images_flare, images_urban, images_fire)
 
     return images_flare, images_urban, images_fire
