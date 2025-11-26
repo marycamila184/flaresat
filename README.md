@@ -161,9 +161,24 @@ python inference/infer.py --image path/to/image.tif --model models/best_model.pt
 
 ## Citation
 
-If you use FlareSat in academic research, please cite:
-[Preprint currently under review at the Journal of the Brazilian Computer Society (JBCS). 
-Full citation will be added upon publication.]
+If you use FlareSat in academic research, please cite the preprint:
+
+**Preprint:** https://doi.org/10.20944/preprints202511.1755.v1
+
+```bibtex
+@article{202511.1755,
+  doi = {10.20944/preprints202511.1755.v1},
+  url = {https://doi.org/10.20944/preprints202511.1755.v1},
+  year = {2025},
+  month = {November},
+  publisher = {Preprints},
+  author = {Osmary Camila Bortoncello Glober and Ricardo Dutra da Silva},
+  title = {FlareSat: A Benchmark Landsat 8 Dataset for Gas Flaring Segmentation in Oil and Gas Facilities},
+  journal = {Preprints}
+}
+```
+
+*The preprint is currently under review at the **Journal of the Brazilian Computer Society (JBCS)**. The final citation will be added upon publication.*
 
 ---
 
