@@ -1,4 +1,4 @@
-# **FlareSat**
+# **FlareSat: A Benchmark Landsat 8 Dataset for Gas Flaring Segmentation in Oil and Gas Facilities**
 
 ## Introduction
 
