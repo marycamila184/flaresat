@@ -1,8 +1,8 @@
-keras==3.12.0
-numpy==2.3.5
+numpy
+scikit-image
 opencv_python==4.12.0.88
 pandas==2.3.3
 scikit_learn==1.7.2
-skimage==0.0
+keras==3.12.0
 tensorflow==2.20.0
 tifffile==2025.10.16
