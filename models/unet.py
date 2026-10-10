@@ -4,7 +4,7 @@ from keras.layers import Input
 from tensorflow.keras import layers
 from tensorflow.keras.optimizers import Adam
 
-from models.utils.metrics import f1_score
+from models.utils.metrics import F1Score
 
 LEARNING_RATE = 0.001
 MASK_CHANNELS = 1
@@ -71,6 +71,6 @@ def unet_model(input_size, base_filters=32, dropout = 0.1):
     outputs = layers.Conv2D(MASK_CHANNELS, (1, 1), activation='sigmoid')(c9)
 
     model = Model(inputs=[inputs], outputs=[outputs])
-    model.compile(optimizer=Adam(learning_rate=LEARNING_RATE), loss='binary_focal_crossentropy', metrics=[tf.keras.metrics.Precision(), tf.keras.metrics.Recall(), f1_score])
+    model.compile(optimizer=Adam(learning_rate=LEARNING_RATE), loss='binary_focal_crossentropy', metrics=[tf.keras.metrics.Precision(), tf.keras.metrics.Recall(), F1Score()])
 
     return model

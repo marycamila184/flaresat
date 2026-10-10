@@ -1,4 +1,3 @@
-from models.utils.attention_resize_layer import ResizeLayer
 from tensorflow.keras.initializers import HeNormal
 from tensorflow.keras.optimizers import Adam
 from tensorflow.keras import layers, Model
@@ -7,8 +6,7 @@ import numpy as np
 
 from models.transfer_learning.builder import unet_builder
 
-from models.utils.attention_resize_layer import ResizeLayer
-from models.utils.metrics import f1_score
+from models.utils.metrics import F1Score
 
 
 LEARNING_RATE = 0.001
@@ -16,8 +14,6 @@ MASK_CHANNELS = 1
 
 
 def attention_block(g, x, num_filters):
-    resize_layer = ResizeLayer()
-    
     theta_x = layers.Conv2D(num_filters, (1, 1), strides=(1, 1), padding='same')(x)
     phi_g = layers.Conv2D(num_filters, (1, 1), strides=(1, 1), padding='same')(g)
 
@@ -26,9 +22,9 @@ def attention_block(g, x, num_filters):
 
     psi = layers.Conv2D(1, (1, 1), strides=(1, 1), padding='same')(relu)
     sigmoid = layers.Activation('sigmoid')(psi)
-    
-    upsampled_sigmoid = resize_layer(sigmoid)
-    attention = layers.multiply([x, upsampled_sigmoid])
+
+    # theta_x uses stride 1, so the attention map already matches x spatially
+    attention = layers.multiply([x, sigmoid])
     return attention
 
 
@@ -40,13 +36,14 @@ def unet_attention_sentinel_landcover(input_size, dict_channels=None, seed=42):
     existing_model.load_weights('/home/mary-camila/Downloads/flaresat-full/train/models/transfer_learning/models/unet-sentinel-landcover-14c.h5')
     existing_weights = existing_model.get_weights()
 
-    # Mapping Sentinel-2 bands to Landsat 8 bands
-    band_2 = existing_weights[0][:, :, 1, :]  # Sentinel Band 2 → Landsat Band 2 (Blue)
-    band_3 = existing_weights[0][:, :, 2, :]  # Sentinel Band 3 → Landsat Band 3 (Green)
-    band_4 = existing_weights[0][:, :, 3, :]  # Sentinel Band 4 → Landsat Band 4 (Red)
-    band_5 = existing_weights[0][:, :, 4, :]  # Sentinel Band 8 → Landsat Band 5 (NIR)
+    # Mapping Sentinel-2 bands to Landsat 8 bands. Pretrained input channel order (lulc_ml):
+    # 0 B02, 1 B03, 2 B04, 3 B05, 4 B06, 5 B07, 6 B08, 7 B11, 8 B12, 9 NDVI, 10 NDTI, 11 NDBI, 12 NDMI, 13 NDSI
+    band_2 = existing_weights[0][:, :, 0, :]  # Sentinel Band 2 → Landsat Band 2 (Blue)
+    band_3 = existing_weights[0][:, :, 1, :]  # Sentinel Band 3 → Landsat Band 3 (Green)
+    band_4 = existing_weights[0][:, :, 2, :]  # Sentinel Band 4 → Landsat Band 4 (Red)
+    band_5 = existing_weights[0][:, :, 6, :]  # Sentinel Band 8 → Landsat Band 5 (NIR)
     band_6 = existing_weights[0][:, :, 7, :]  # Sentinel Band 11 → Landsat Band 6 (SWIR1)
-    band_7 = existing_weights[0][:, :, 10, :]  # Sentinel Band 12 → Landsat Band 7 (SWIR2)
+    band_7 = existing_weights[0][:, :, 8, :]  # Sentinel Band 12 → Landsat Band 7 (SWIR2)
 
     input_shape = existing_weights[0].shape
 
@@ -55,23 +52,19 @@ def unet_attention_sentinel_landcover(input_size, dict_channels=None, seed=42):
     band_10 = HeNormal(seed=seed+3)((input_shape[0], input_shape[1], input_shape[3])).numpy()  # Landsat Band 10 (Thermal Infrared 1)
     band_11 = HeNormal(seed=seed+4)((input_shape[0], input_shape[1], input_shape[3])).numpy()  # Landsat Band 11 (Thermal Infrared 2)
     
-    if n_channels == 3:            
-        if dict_channels == (1,5,6): # 2, 6 e 7 Landsat OLI            
-            list_channels_weights = [band_2, band_6, band_7]
+    # Patch channel indices -> first-layer kernels
+    channels_weights = {
+        (1, 5, 6): [band_2, band_6, band_7],  # 2, 6 e 7 Landsat OLI
+        (4, 5, 6): [band_5, band_6, band_7],  # 5, 6 e 7 Landsat OLI
+        (3, 4, 5, 6): [band_4, band_5, band_6, band_7],  # 4, 5, 6 e 7 Landsat OLI
+        (): [band_1, band_2, band_3, band_4, band_5, band_6, band_7, band_9, band_10, band_11],  # all 10 bands
+    }
+    key = tuple(dict_channels) if dict_channels else ()
+    if key not in channels_weights or len(channels_weights[key]) != n_channels:
+        raise ValueError(f"Unsupported band combination {key} for {n_channels} channels; "
+                         f"supported: {list(channels_weights)}")
+    list_channels_weights = channels_weights[key]
 
-        elif dict_channels == (4,5,6): # 5, 6 e 7 Landsat OLI
-            list_channels_weights = [band_5, band_6, band_7]   
-
-        elif dict_channels == (3,5,6): # 4, 6 e 7 Landsat OLI
-            list_channels_weights = [band_4, band_6, band_7]  
-
-    elif n_channels == 4:
-        # 4, 5, 6 e 7 Landsat OLI
-        list_channels_weights = [band_4, band_5, band_6, band_7]  
-        
-    else:
-        list_channels_weights = [band_1, band_2, band_3, band_4, band_5, band_6, band_7, band_9, band_10, band_11]
-        
     existing_weights[0] = existing_weights[0][:, :, :n_channels, :]
     existing_weights[0][:, :, :n_channels, :] = np.stack(list_channels_weights, axis=2)
 
@@ -84,27 +77,32 @@ def unet_attention_sentinel_landcover(input_size, dict_channels=None, seed=42):
 
     new_model.set_weights(existing_weights)
 
-    inputs = new_model.input
-    encoder_outputs = {
-        'decoder_stage0_relu1': new_model.get_layer('encoder_stage3_relu2').output,
-        'decoder_stage1_relu1': new_model.get_layer('encoder_stage2_relu2').output,
-        'decoder_stage2_relu1': new_model.get_layer('encoder_stage1_relu2').output,
-        'decoder_stage3_relu1': new_model.get_layer('encoder_stage0_relu2').output
+    # Rebuild the U-Net in a single pass with the pretrained layers, gating each skip connection with the
+    # decoder features of this same path. Concatenation order matches the pretrained decoder: [upsampled, skip].
+    skip_for_decoder = {
+        'decoder_stage0_relu1': 'encoder_stage3_relu2',
+        'decoder_stage1_relu1': 'encoder_stage2_relu2',
+        'decoder_stage2_relu1': 'encoder_stage1_relu2',
+        'decoder_stage3_relu1': 'encoder_stage0_relu2'
     }
 
+    inputs = new_model.input
     x = inputs
+    skips = {}
 
-    for layer in new_model.layers:        
-        if 'concatenate' not in layer.name and 'input_layer' not in layer.name:
-            if layer.name in encoder_outputs:            
-                skip_connection = encoder_outputs[layer.name]
-                attended_skip = attention_block(layer.output, skip_connection, num_filters=layer.output.shape[-1])
-                x = layer(x)
-                x = layers.Concatenate()([attended_skip, x])
-            else:
-                x = layer(x)
+    for layer in new_model.layers:
+        if isinstance(layer, (layers.InputLayer, layers.Concatenate)):
+            continue
+
+        x = layer(x)
+
+        if layer.name in skip_for_decoder.values():
+            skips[layer.name] = x
+        elif layer.name in skip_for_decoder:
+            attended_skip = attention_block(x, skips[skip_for_decoder[layer.name]], num_filters=x.shape[-1])
+            x = layers.Concatenate()([x, attended_skip])
 
     new_model = Model(inputs=inputs, outputs=x)
-    new_model.compile(optimizer=Adam(learning_rate=LEARNING_RATE), loss='binary_focal_crossentropy', metrics=[tf.keras.metrics.Precision(), tf.keras.metrics.Recall(), f1_score])
+    new_model.compile(optimizer=Adam(learning_rate=LEARNING_RATE), loss='binary_focal_crossentropy', metrics=[tf.keras.metrics.Precision(), tf.keras.metrics.Recall(), F1Score()])
 
     return new_model
