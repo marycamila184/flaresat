@@ -2,11 +2,15 @@ import numpy as np
 import tifffile as tiff
 from skimage.transform import resize
 
+IMAGE_SHAPE = (256, 256, 10)
+MASK_SHAPE = (256, 256, 1)
+
 
 def load_image(file_path, n_channels, target_size=None, bands=[]):
     img = tiff.imread(file_path)
-    img = np.resize(img, (256, 256, 10))
-    
+    if img.shape != IMAGE_SHAPE:
+        raise ValueError(f"{file_path}: expected shape {IMAGE_SHAPE}, got {img.shape}")
+
     if n_channels == 10:
         img = img[:, :, :]
     else:
@@ -21,7 +25,10 @@ def load_image(file_path, n_channels, target_size=None, bands=[]):
 
 def load_mask(file_path, target_size=None, norm=True):
     mask = tiff.imread(file_path)
-    mask = np.resize(mask, (256, 256, 1))
+    if mask.ndim == 2:
+        mask = mask[..., np.newaxis]
+    if mask.shape != MASK_SHAPE:
+        raise ValueError(f"{file_path}: expected shape {MASK_SHAPE}, got {mask.shape}")
     mask = np.float32(mask)
 
     if target_size:

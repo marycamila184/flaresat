@@ -4,8 +4,7 @@ from keras.layers import Input
 from tensorflow.keras import layers
 from tensorflow.keras.optimizers import Adam
 
-from models.utils.metrics import f1_score
-from models.utils.attention_resize_layer import ResizeLayer
+from models.utils.metrics import F1Score
 
 LEARNING_RATE = 0.0005
 MASK_CHANNELS = 1
@@ -27,8 +26,6 @@ def conv_block(input_tensor, num_filters, kernel_size=3, batch_norm=True, kernel
 
 
 def attention_block(g, x, num_filters):
-    resize_layer = ResizeLayer()
-    
     theta_x = layers.Conv2D(num_filters, (1, 1), strides=(1, 1), padding='same')(x)
     phi_g = layers.Conv2D(num_filters, (1, 1), strides=(1, 1), padding='same')(g)
 
@@ -37,9 +34,9 @@ def attention_block(g, x, num_filters):
 
     psi = layers.Conv2D(1, (1, 1), strides=(1, 1), padding='same')(relu)
     sigmoid = layers.Activation('sigmoid')(psi)
-    
-    upsampled_sigmoid = resize_layer(sigmoid)
-    attention = layers.multiply([x, upsampled_sigmoid])
+
+    # theta_x uses stride 1, so the attention map already matches x spatially
+    attention = layers.multiply([x, sigmoid])
     return attention
 
 
@@ -94,6 +91,6 @@ def unet_attention_model(input_size, base_filters=32, dropout = 0.1):
     outputs = layers.Conv2D(MASK_CHANNELS, (1, 1), activation='sigmoid')(c9)
 
     model = Model(inputs=[inputs], outputs=[outputs])
-    model.compile(optimizer=Adam(learning_rate=LEARNING_RATE), loss='binary_focal_crossentropy', metrics=[tf.keras.metrics.Precision(), tf.keras.metrics.Recall(), f1_score])
+    model.compile(optimizer=Adam(learning_rate=LEARNING_RATE), loss='binary_focal_crossentropy', metrics=[tf.keras.metrics.Precision(), tf.keras.metrics.Recall(), F1Score()])
 
     return model
